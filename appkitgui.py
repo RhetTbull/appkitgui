@@ -45,7 +45,6 @@ from AppKit import (
     NSLayoutRelationGreaterThanOrEqual,
     NSLayoutRelationLessThanOrEqual,
     NSMakeRect,
-    NSMatrix,
     NSMenu,
     NSMenuItem,
     NSModalPanelWindowLevel,
@@ -76,16 +75,20 @@ from AppKit import (
     NSWindowStyleMaskResizable,
     NSWindowStyleMaskTitled,
 )
-from Foundation import NSLog, NSMakePoint, NSMakeRect
+from Foundation import NSMakeRect
 from objc import objc_method, python_method
+
+# constants
+EDGE_INSET = 20
+EDGE_INSETS = (EDGE_INSET, EDGE_INSET, EDGE_INSET, EDGE_INSET)
 
 
 # helper functions to create AppKit objects
 def hstack() -> NSStackView:
     """Create a horizontal NSStackView"""
     hstack = NSStackView.stackViewWithViews_(None).autorelease()
+    hstack.setSpacing_(8)
     hstack.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
-    hstack.setSpacing_(10)
     hstack.setDistribution_(NSStackViewDistributionFill)
     hstack.setAlignment_(NSLayoutAttributeCenterY)
     return hstack
@@ -94,8 +97,8 @@ def hstack() -> NSStackView:
 def vstack() -> NSStackView:
     """Create a vertical NSStackView"""
     vstack = NSStackView.stackViewWithViews_(None).autorelease()
+    vstack.setSpacing_(8)
     vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
-    vstack.setSpacing_(10)
     vstack.setDistribution_(NSStackViewDistributionFill)
     vstack.setAlignment_(NSLayoutAttributeLeft)
     return vstack
@@ -145,14 +148,15 @@ def combo_box(
     delegate: NSObject | None = None,
 ) -> NSComboBox:
     """Create a combo box"""
+
+    # TODO: the size of the combo box is not preserved--it always resizes to the contents
     combo_box = (
-        NSComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 200, 25)).autorelease()
+        NSComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25)).autorelease()
     )
     combo_box.setTarget_(target)
     if values:
         combo_box.addItemsWithObjectValues_(values)
         combo_box.selectItemAtIndex_(0)
-    # combo_box.setItemHeight_(20.0)
     if delegate:
         combo_box.setDelegate_(delegate)
     if action:
@@ -160,6 +164,14 @@ def combo_box(
     combo_box.setCompletes_(True)
     combo_box.setEditable_(False)
     return combo_box
+
+
+def hseparator() -> NSBox:
+    """Create a horizontal separator"""
+    separator = NSBox.alloc().init().autorelease()
+    separator.setBoxType_(NSBoxSeparator)
+    separator.setTranslatesAutoresizingMaskIntoConstraints_(False)
+    return separator
 
 
 class DemoWindow(NSObject):
@@ -187,8 +199,8 @@ class DemoWindow(NSObject):
         """Create the main NStackView for the app and add it to the window"""
         main_view = NSStackView.stackViewWithViews_(None)
         main_view.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
-        main_view.setSpacing_(10)
-        main_view.setEdgeInsets_((20, 20, 20, 20))
+        main_view.setSpacing_(8)
+        main_view.setEdgeInsets_(EDGE_INSETS)
         main_view.setDistribution_(NSStackViewDistributionFill)
         main_view.setAlignment_(NSLayoutAttributeLeft)
 
@@ -205,10 +217,10 @@ class DemoWindow(NSObject):
             main_view.superview().leftAnchor()
         )
         left_constraint.setActive_(True)
-        # right_constraint = main_view.rightAnchor().constraintEqualToAnchor_(
-        #     main_view.superview().rightAnchor()
-        # )
-        # right_constraint.setActive_(True)
+        right_constraint = main_view.rightAnchor().constraintEqualToAnchor_(
+            main_view.superview().rightAnchor()
+        )
+        right_constraint.setActive_(True)
         return main_view
 
     def show(self):
@@ -271,35 +283,13 @@ class DemoWindow(NSObject):
             )
             self.hstack2.addArrangedSubview_(self.combo_box)
 
-            # # separator
-            # self.separator = NSBox.alloc().initWithFrame_(NSMakeRect(50, 340, 400, 1))
-            # self.separator.setBoxType_(NSBoxSeparator)
-            # self.window.contentView().addSubview_(self.separator)
-
-            # # stack view
-            # self.stackView = NSStackView.alloc().initWithFrame_(
-            #     NSMakeRect(50, 350, 400, 200)
-            # )
-            # self.stackView.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
-            # self.stackView.setSpacing_(10)
-            # self.stackView.setDistribution_(NSStackViewDistributionGravityAreas)
-            # self.stackView.setClippingResistancePriority_forOrientation_(1000, 1)
-            # self.stackView.setHuggingPriority_forOrientation_(1000, 1)
-            # self.stackView.setAlignment_(NSLayoutAttributeWidth)
-
-            # self.button1 = NSButton.alloc().initWithFrame_(((0, 0), (200, 50)))
-            # self.button1.setBezelStyle_(1)
-            # self.button1.setTitle_("Button 1")
-            # self.button1.setTarget_(self)
-            # self.button1.setAction_("chooseFile:")
-            # self.stackView.addView_inGravity_(self.button1, 1)
-
-            # self.button2 = NSButton.alloc().initWithFrame_(((0, 0), (200, 50)))
-            # self.button2.setBezelStyle_(1)
-            # self.button2.setTitle_("Button 2")
-            # self.button2.setTarget_(self)
-            # self.button2.setAction_("chooseFile:")
-            # self.stackView.addView_inGravity_(self.button2, 1)
+            # add a horizontal separator
+            self.hsep = hseparator()
+            self.main_view.addArrangedSubview_(self.hsep)
+            # constrain the separator to the left and right edges of the main view, inset by EDGE_INSET
+            self.hsep.rightAnchor().constraintEqualToAnchor_constant_(
+                self.main_view.rightAnchor(), -EDGE_INSET
+            ).setActive_(True)
 
             self.window.makeKeyAndOrderFront_(None)
             self.window.setIsVisible_(True)
