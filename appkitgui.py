@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 import objc
@@ -20,6 +21,11 @@ from AppKit import (
     NSColor,
     NSComboBox,
     NSFileHandlingPanelOKButton,
+    NSImage,
+    NSImageAlignTopLeft,
+    NSImageScaleProportionallyDown,
+    NSImageScaleProportionallyUpOrDown,
+    NSImageView,
     NSLayoutAttributeBottom,
     NSLayoutAttributeCenterX,
     NSLayoutAttributeCenterY,
@@ -68,6 +74,9 @@ from AppKit import (
     NSUserInterfaceLayoutOrientationHorizontal,
     NSUserInterfaceLayoutOrientationVertical,
     NSVariableStatusItemLength,
+    NSViewMaxXMargin,
+    NSViewMaxYMargin,
+    NSViewMinXMargin,
     NSViewMinYMargin,
     NSViewWidthSizable,
     NSWindow,
@@ -75,7 +84,7 @@ from AppKit import (
     NSWindowStyleMaskResizable,
     NSWindowStyleMaskTitled,
 )
-from Foundation import NSMakeRect
+from Foundation import NSMakeRect, NSMakeSize
 from objc import objc_method, python_method
 
 # constants
@@ -84,23 +93,27 @@ EDGE_INSETS = (EDGE_INSET, EDGE_INSET, EDGE_INSET, EDGE_INSET)
 
 
 # helper functions to create AppKit objects
-def hstack() -> NSStackView:
+def hstack(
+    align: int = NSLayoutAttributeCenterY, distribute: int = NSStackViewDistributionFill
+) -> NSStackView:
     """Create a horizontal NSStackView"""
     hstack = NSStackView.stackViewWithViews_(None).autorelease()
     hstack.setSpacing_(8)
     hstack.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
-    hstack.setDistribution_(NSStackViewDistributionFill)
-    hstack.setAlignment_(NSLayoutAttributeCenterY)
+    hstack.setDistribution_(distribute)
+    hstack.setAlignment_(align)
     return hstack
 
 
-def vstack() -> NSStackView:
+def vstack(
+    align: int = NSLayoutAttributeLeft, distribute: int = NSStackViewDistributionFill
+) -> NSStackView:
     """Create a vertical NSStackView"""
     vstack = NSStackView.stackViewWithViews_(None).autorelease()
     vstack.setSpacing_(8)
     vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
-    vstack.setDistribution_(NSStackViewDistributionFill)
-    vstack.setAlignment_(NSLayoutAttributeLeft)
+    vstack.setDistribution_(distribute)
+    vstack.setAlignment_(align)
     return vstack
 
 
@@ -172,6 +185,21 @@ def hseparator() -> NSBox:
     separator.setBoxType_(NSBoxSeparator)
     separator.setTranslatesAutoresizingMaskIntoConstraints_(False)
     return separator
+
+
+def image_view(
+    path: str | os.PathLike, width: int | None = None, height: int | None = None
+) -> NSImageView:
+    """Create an image from a file"""
+    image = NSImage.alloc().initByReferencingFile_(str(path)).autorelease()
+    image_view = NSImageView.imageViewWithImage_(image).autorelease()
+    image_view.setImageScaling_(NSImageScaleProportionallyUpOrDown)
+    image_view.setImageAlignment_(NSImageAlignTopLeft)
+    if width:
+        image_view.widthAnchor().constraintEqualToConstant_(width).setActive_(True)
+    if height:
+        image_view.heightAnchor().constraintEqualToConstant_(height).setActive_(True)
+    return image_view
 
 
 class DemoWindow(NSObject):
@@ -291,6 +319,11 @@ class DemoWindow(NSObject):
                 self.main_view.rightAnchor(), -EDGE_INSET
             ).setActive_(True)
 
+            # add an image
+            self.image = image_view("image.jpeg", width=200)
+            self.main_view.addArrangedSubview_(self.image)
+
+            # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
             self.window.setIsVisible_(True)
             self.window.setLevel_(NSNormalWindowLevel)
