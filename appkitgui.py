@@ -1,0 +1,420 @@
+"""Create a simple macOS app with AppKit & pyobjc"""
+
+from __future__ import annotations
+
+from typing import Callable
+
+import objc
+from AppKit import (
+    NSApp,
+    NSApplication,
+    NSApplicationActivationPolicyRegular,
+    NSApplicationMain,
+    NSBackingStoreBuffered,
+    NSBox,
+    NSBoxSeparator,
+    NSButton,
+    NSButtonCell,
+    NSButtonTypeRadio,
+    NSButtonTypeSwitch,
+    NSColor,
+    NSComboBox,
+    NSFileHandlingPanelOKButton,
+    NSLayoutAttributeBottom,
+    NSLayoutAttributeCenterX,
+    NSLayoutAttributeCenterY,
+    NSLayoutAttributeFirstBaseline,
+    NSLayoutAttributeHeight,
+    NSLayoutAttributeLastBaseline,
+    NSLayoutAttributeLeading,
+    NSLayoutAttributeLeft,
+    NSLayoutAttributeNotAnAttribute,
+    NSLayoutAttributeRight,
+    NSLayoutAttributeTop,
+    NSLayoutAttributeTrailing,
+    NSLayoutAttributeWidth,
+    NSLayoutConstraintOrientationVertical,
+    NSLayoutPriorityDefaultHigh,
+    NSLayoutPriorityDefaultLow,
+    NSLayoutPriorityDragThatCannotResizeWindow,
+    NSLayoutPriorityDragThatCanResizeWindow,
+    NSLayoutPriorityFittingSizeCompression,
+    NSLayoutPriorityRequired,
+    NSLayoutPriorityWindowSizeStayPut,
+    NSLayoutRelationEqual,
+    NSLayoutRelationGreaterThanOrEqual,
+    NSLayoutRelationLessThanOrEqual,
+    NSMakeRect,
+    NSMatrix,
+    NSMenu,
+    NSMenuItem,
+    NSModalPanelWindowLevel,
+    NSNormalWindowLevel,
+    NSObject,
+    NSOnState,
+    NSOpenPanel,
+    NSProcessInfo,
+    NSRadioButton,
+    NSStackView,
+    NSStackViewDistributionEqualCentering,
+    NSStackViewDistributionEqualSpacing,
+    NSStackViewDistributionFill,
+    NSStackViewDistributionFillEqually,
+    NSStackViewDistributionFillProportionally,
+    NSStackViewDistributionGravityAreas,
+    NSStackViewGravityTop,
+    NSStatusBar,
+    NSTextField,
+    NSTitledWindowMask,
+    NSUserInterfaceLayoutOrientationHorizontal,
+    NSUserInterfaceLayoutOrientationVertical,
+    NSVariableStatusItemLength,
+    NSViewMinYMargin,
+    NSViewWidthSizable,
+    NSWindow,
+    NSWindowStyleMaskClosable,
+    NSWindowStyleMaskResizable,
+    NSWindowStyleMaskTitled,
+)
+from Foundation import NSLog, NSMakePoint, NSMakeRect
+from objc import objc_method, python_method
+
+
+# helper functions to create AppKit objects
+def hstack() -> NSStackView:
+    """Create a horizontal NSStackView"""
+    hstack = NSStackView.stackViewWithViews_(None).autorelease()
+    hstack.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
+    hstack.setSpacing_(10)
+    hstack.setDistribution_(NSStackViewDistributionFill)
+    hstack.setAlignment_(NSLayoutAttributeCenterY)
+    return hstack
+
+
+def vstack() -> NSStackView:
+    """Create a vertical NSStackView"""
+    vstack = NSStackView.stackViewWithViews_(None).autorelease()
+    vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
+    vstack.setSpacing_(10)
+    vstack.setDistribution_(NSStackViewDistributionFill)
+    vstack.setAlignment_(NSLayoutAttributeLeft)
+    return vstack
+
+
+def label(value: str) -> NSTextField:
+    """Create a label"""
+    label = NSTextField.labelWithString_(value).autorelease()
+    label.setEditable_(False)
+    label.setBordered_(False)
+    label.setBackgroundColor_(NSColor.clearColor())
+    return label
+
+
+def button(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
+    """Create a button"""
+    button = NSButton.buttonWithTitle_target_action_(
+        title, target, action
+    ).autorelease()
+    return button
+
+
+def checkbox(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
+    """Create a checkbox button"""
+    checkbox = NSButton.buttonWithTitle_target_action_(
+        title, target, action
+    ).autorelease()
+    checkbox.setButtonType_(NSButtonTypeSwitch)  # Switch button type
+    return checkbox
+
+
+def radio_button(
+    title: str, target: NSObject, action: Callable | str | None
+) -> NSButton:
+    """Create a radio button"""
+    radio_button = NSButton.buttonWithTitle_target_action_(
+        title, target, action
+    ).autorelease()
+    radio_button.setButtonType_(NSRadioButton)
+    return radio_button
+
+
+def combo_box(
+    values: list[str] | None,
+    target: NSObject,
+    action: Callable | str | None,
+    delegate: NSObject | None = None,
+) -> NSComboBox:
+    """Create a combo box"""
+    combo_box = (
+        NSComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 200, 25)).autorelease()
+    )
+    combo_box.setTarget_(target)
+    if values:
+        combo_box.addItemsWithObjectValues_(values)
+        combo_box.selectItemAtIndex_(0)
+    # combo_box.setItemHeight_(20.0)
+    if delegate:
+        combo_box.setDelegate_(delegate)
+    if action:
+        combo_box.setAction_(action)
+    combo_box.setCompletes_(True)
+    combo_box.setEditable_(False)
+    return combo_box
+
+
+class DemoWindow(NSObject):
+    """Demo window showing how to display widgets"""
+
+    @python_method
+    def create_window(self) -> NSWindow:
+        """Create the NSWindow object"""
+        # use @python_method decorator to tell objc this is called using python
+        # conventions, not objc conventions
+        window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+            NSMakeRect(0, 0, 600, 600),
+            NSWindowStyleMaskTitled
+            | NSWindowStyleMaskClosable
+            | NSWindowStyleMaskResizable,
+            NSBackingStoreBuffered,
+            False,
+        )
+        window.center()
+        window.setTitle_("Demo Window")
+        return window
+
+    @python_method
+    def create_main_view_(self, window: NSWindow) -> NSStackView:
+        """Create the main NStackView for the app and add it to the window"""
+        main_view = NSStackView.stackViewWithViews_(None)
+        main_view.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
+        main_view.setSpacing_(10)
+        main_view.setEdgeInsets_((20, 20, 20, 20))
+        main_view.setDistribution_(NSStackViewDistributionFill)
+        main_view.setAlignment_(NSLayoutAttributeLeft)
+
+        window.contentView().addSubview_(main_view)
+        top_constraint = main_view.topAnchor().constraintEqualToAnchor_(
+            main_view.superview().topAnchor()
+        )
+        top_constraint.setActive_(True)
+        # bottom_constraint = main_view.bottomAnchor().constraintEqualToAnchor_(
+        #     main_view.superview().bottomAnchor()
+        # )
+        # bottom_constraint.setActive_(True)
+        left_constraint = main_view.leftAnchor().constraintEqualToAnchor_(
+            main_view.superview().leftAnchor()
+        )
+        left_constraint.setActive_(True)
+        # right_constraint = main_view.rightAnchor().constraintEqualToAnchor_(
+        #     main_view.superview().rightAnchor()
+        # )
+        # right_constraint.setActive_(True)
+        return main_view
+
+    def show(self):
+        """Create and show the window"""
+        with objc.autorelease_pool():
+            # create the window
+            self.window = self.create_window()
+            self.main_view = self.create_main_view_(self.window)
+
+            self.label_hello = label("Hello World")
+            self.main_view.addArrangedSubview_(self.label_hello)
+
+            # add a horizontal NSStackView to hold widgets side by side
+            # and add it to the main view
+            self.hstack1 = hstack()
+            self.main_view.addArrangedSubview_(self.hstack1)
+
+            # add a button that activates a file chooser panel
+            # the method chooseFile_ does not actually exist in this class
+            # self.choose_file() is mapped via @objc_method to "chooseFile:"
+            # via the objc bridge -- see self.choose_file() definition
+            # this is done here just as an example of how the objc bridge works
+            self.choose_file_button = button("Choose File", self, self.chooseFile_)
+            self.hstack1.addArrangedSubview_(self.choose_file_button)
+
+            # create a label which will be updated by choose_file when user chooses a file
+            self.label_file = label("")
+            self.hstack1.addArrangedSubview_(self.label_file)
+
+            # create side by side vertical NSStackViews to hold checkboxes and radio buttons
+            self.hstack2 = hstack()
+            self.main_view.addArrangedSubview_(self.hstack2)
+
+            self.vstack1 = vstack()
+            self.hstack2.addArrangedSubview_(self.vstack1)
+
+            self.checkbox1 = checkbox("Checkbox 1", self, self.checkbox_action)
+            self.vstack1.addArrangedSubview_(self.checkbox1)
+            self.checkbox2 = checkbox("Checkbox 2", self, self.checkbox_action)
+            self.vstack1.addArrangedSubview_(self.checkbox2)
+            self.checkbox3 = checkbox("Checkbox 3", self, self.checkbox_action)
+            self.vstack1.addArrangedSubview_(self.checkbox3)
+
+            self.vstack2 = vstack()
+            self.hstack2.addArrangedSubview_(self.vstack2)
+
+            self.radio1 = radio_button("Radio 1", self, self.radioAction_)
+            self.radio2 = radio_button("Radio 2", self, self.radioAction_)
+            self.radio3 = radio_button("Radio 3", self, self.radioAction_)
+            self.vstack2.addArrangedSubview_(self.radio1)
+            self.vstack2.addArrangedSubview_(self.radio2)
+            self.vstack2.addArrangedSubview_(self.radio3)
+            self.radio1.setState_(NSOnState)
+
+            # add a combo box; set the delegate to self so we can handle
+            # selection changes via the delegate method comboBoxSelectionDidChange_
+            # TODO: the size of the combo box is not preserved--it always resizes to the contents
+            self.combo_box = combo_box(
+                ["Combo 1", "Combo 2", "Combo 3"], self, self.comboBoxAction_, self
+            )
+            self.hstack2.addArrangedSubview_(self.combo_box)
+
+            # # separator
+            # self.separator = NSBox.alloc().initWithFrame_(NSMakeRect(50, 340, 400, 1))
+            # self.separator.setBoxType_(NSBoxSeparator)
+            # self.window.contentView().addSubview_(self.separator)
+
+            # # stack view
+            # self.stackView = NSStackView.alloc().initWithFrame_(
+            #     NSMakeRect(50, 350, 400, 200)
+            # )
+            # self.stackView.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
+            # self.stackView.setSpacing_(10)
+            # self.stackView.setDistribution_(NSStackViewDistributionGravityAreas)
+            # self.stackView.setClippingResistancePriority_forOrientation_(1000, 1)
+            # self.stackView.setHuggingPriority_forOrientation_(1000, 1)
+            # self.stackView.setAlignment_(NSLayoutAttributeWidth)
+
+            # self.button1 = NSButton.alloc().initWithFrame_(((0, 0), (200, 50)))
+            # self.button1.setBezelStyle_(1)
+            # self.button1.setTitle_("Button 1")
+            # self.button1.setTarget_(self)
+            # self.button1.setAction_("chooseFile:")
+            # self.stackView.addView_inGravity_(self.button1, 1)
+
+            # self.button2 = NSButton.alloc().initWithFrame_(((0, 0), (200, 50)))
+            # self.button2.setBezelStyle_(1)
+            # self.button2.setTitle_("Button 2")
+            # self.button2.setTarget_(self)
+            # self.button2.setAction_("chooseFile:")
+            # self.stackView.addView_inGravity_(self.button2, 1)
+
+            self.window.makeKeyAndOrderFront_(None)
+            self.window.setIsVisible_(True)
+            self.window.setLevel_(NSNormalWindowLevel)
+            self.window.setReleasedWhenClosed_(False)
+            return self.window
+
+    @objc_method(selector=b"checkboxAction:")
+    def checkbox_action(self, sender: NSButton):
+        """Handle checkbox checked/unchecked"""
+        # when passing a python style method to the objc bridge
+        # you need to mark it as an objc method
+        # the selector is the method name passed to the bridge and
+        # the number of : in the name must match the number of arguments
+        # this method could also be called as self.checkboxAction_() once
+        # the decorator is applied
+        print("Checkbox changed: ", sender.title(), sender.state())
+
+    def radioAction_(self, sender):
+        """Handle radio button selected"""
+        # This method name conforms to the objc calling convention therefore
+        # the @objc_method decorator is not needed
+        print("Radio button selected: ", sender.selectedCell().title())
+
+    def comboBoxAction_(self, sender):
+        """Handle combo box action"""
+        # This gets called when the user hits return in the combo box
+        # which they cannot do if the combo box is not editable
+        print("Combo box: ", sender.objectValueOfSelectedItem())
+
+    def comboBoxSelectionDidChange_(self, notification):
+        """Handle combo box selection change"""
+        # This is a delegate method and is called when the user selects
+        # an item in the combo box
+        # For this to work, the combo box delegate must be set to self
+        if not getattr(self, "combo_box", None):
+            return
+        print(
+            "Combo box selection changed: ", self.combo_box.objectValueOfSelectedItem()
+        )
+
+    def openWindow_(self, sender):
+        print("openWindow")
+        self.window.setIsVisible_(True)
+        self.window.makeKeyAndOrderFront_(None)
+        self.window.setLevel_(5)
+        print("opened")
+
+    @objc_method(selector=b"chooseFile:")
+    def choose_file(self, sender):
+        """Present file chooser panel"""
+        # use @objc_method decorator to tell objc to call this method when chooseFile: selector is called
+        open_panel = NSOpenPanel.openPanel()
+        open_panel.setCanChooseFiles_(True)
+        open_panel.setCanChooseDirectories_(False)
+        open_panel.setAllowsMultipleSelection_(False)
+        if open_panel.runModal() == NSFileHandlingPanelOKButton:
+            file_url = open_panel.URLs()[0].fileSystemRepresentation().decode("utf-8")
+            self.label_file.setStringValue_(file_url)
+            print(f"choose_file: {file_url}")
+        else:
+            print("choose_file: Canceled")
+
+
+class AppDelegate(NSObject):
+    """Minimalist app delegate."""
+
+    def applicationDidFinishLaunching_(self, notification):
+        """Create a window programmatically, without a NIB file."""
+        self.window = DemoWindow.alloc().init()
+        self.window.show()
+
+    def applicationShouldTerminateAfterLastWindowClosed_(self, sender):
+        return True
+
+
+class App:
+    """Create a minimalist app to test the window."""
+
+    def run(self):
+        with objc.autorelease_pool():
+            # create the app
+            NSApplication.sharedApplication()
+            NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+
+            # create the menu bar and attach it to the app
+            menubar = NSMenu.alloc().init().autorelease()
+            app_menu_item = NSMenuItem.alloc().init().autorelease()
+            menubar.addItem_(app_menu_item)
+            NSApp.setMainMenu_(menubar)
+            app_menu = NSMenu.alloc().init().autorelease()
+
+            # add a menu item to the menu to quit the app
+            app_name = NSProcessInfo.processInfo().processName()
+            quit_title = f"Quit {app_name}"
+            quit_menu_item = (
+                NSMenuItem.alloc()
+                .initWithTitle_action_keyEquivalent_(quit_title, "terminate:", "q")
+                .autorelease()
+            )
+            app_menu.addItem_(quit_menu_item)
+            app_menu_item.setSubmenu_(app_menu)
+
+            # create the delegate and attach it to the app
+            delegate = AppDelegate.alloc().init()
+            NSApp.setDelegate_(delegate)
+
+            # run the app
+            NSApp.activateIgnoringOtherApps_(True)
+            return NSApp.run()
+
+
+def main():
+    App().run()
+
+
+if __name__ == "__main__":
+    main()
