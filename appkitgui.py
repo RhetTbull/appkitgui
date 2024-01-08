@@ -271,6 +271,8 @@ class DemoWindow(NSObject):
             # self.choose_file() is mapped via @objc_method to "chooseFile:"
             # via the objc bridge -- see self.choose_file() definition
             # this is done here just as an example of how the objc bridge works
+            # the string, "chooseFile:" could also be passed directly to the
+            # action parameter of the button instead of the callable
             self.choose_file_button = button("Choose File", self, self.chooseFile_)
             self.hstack1.addArrangedSubview_(self.choose_file_button)
 
