@@ -114,13 +114,76 @@ If you need to call a Python method from a class which inherits from an Objectiv
 
 In this example, the `create_window()` method is called from a class which inherits from `NSObject`. Objective-C would expect the method to be passed one argument due to the underscore in the name. Adding the `@python_method` decorator tells PyObjC to ignore the naming convention and call the method as-is.
 
+### Layout
+
+In AppKit, [views and controls](https://developer.apple.com/documentation/appkit/views_and_controls?language=objc) are the building blocks of an app. Controls are specialized views that allow the user to interact with the app or display data (a button for example). Views and controls can be arranged by specifying the coordinates and the size of each view or control (a frame rectangle). Views can also contain other views. For example, the following code creates a window of size 200x200 and adds button with a frame rectangle at coordinates 50, 0 with width of 100 and height of 50 then adds it to the window. Note than on macOS, the view coordinate system has the origin at the bottom left corner of the view.
+
+```python
+window = (
+    NSWindow.alloc()
+    .initWithContentRect_styleMask_backing_defer_(
+        NSMakeRect(0, 0, 200, 200),
+        NSTitledWindowMask,
+        NSBackingStoreBuffered,
+        False,
+    )
+    .autorelease()
+)
+window.cascadeTopLeftFromPoint_(NSMakePoint(20, 20))
+
+button = NSButton.alloc().initWithFrame_(NSMakeRect(50, 0, 100, 50))
+button.setBezelStyle_(1)
+button.setTitle_("Choose File")
+button.setTarget_(window)
+window.contentView().addSubview_(button)
+```
+
+This works fine for very simple windows but it becomes difficult to manage when you have many views and controls or need to account for resizing, etc. To make layout easier, AppKit includes several other classes that can be used to [layout views and controls](https://developer.apple.com/documentation/appkit/view_layout?language=objc). This project makes use of the [NSStackView](https://developer.apple.com/documentation/appkit/nsstackview?language=objc) which allows you to arrange views and controls in a horizontal or vertical stack. The following code creates a window with a vertical stack view and adds a button to it. The stack view will automatically arrange the button so it is centered between left/right edges of the window and move the button to maintain position when the window is resized.
+
+```python
+window = (
+    NSWindow.alloc()
+    .initWithContentRect_styleMask_backing_defer_(
+        NSMakeRect(0, 0, 200, 200),
+        NSWindowStyleMaskClosable
+        | NSWindowStyleMaskResizable
+        | NSWindowStyleMaskTitled,
+        NSBackingStoreBuffered,
+        False,
+    )
+    .autorelease()
+)
+window.cascadeTopLeftFromPoint_(NSMakePoint(20, 20))
+
+vstack = NSStackView.stackViewWithViews_(None)
+vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
+vstack.setDistribution_(NSStackViewDistributionFillEqually)
+vstack.setAlignment_(NSLayoutAttributeCenterX)
+window.contentView().addSubview_(vstack)
+vstack.topAnchor().constraintEqualToAnchor_(
+    vstack.superview().topAnchor()
+).setActive_(True)
+vstack.leftAnchor().constraintEqualToAnchor_(
+    vstack.superview().leftAnchor()
+).setActive_(True)
+vstack.rightAnchor().constraintEqualToAnchor_(
+    vstack.superview().rightAnchor()
+).setActive_(True)
+button = NSButton.buttonWithTitle_target_action_("Choose File", None, None)
+vstack.addArrangedSubview_(button)
+```
+
+Comparing the two examples, the second one takes a bit more work to set up but once the layout constraints are set, the stack view will automatically handle resizing and positioning of the controls. The stack view also makes it easy to add additional views and controls to the window.
+
+This project makes use of `NSStackView` to layout the controls in the window.
+
 ## Implementation Notes
 
 I'm certain there are better ways to do this. The AppKit framework provides many different ways to create and use native controls. I've experimented and found something that worked but it may not be optimal. I welcome any feedback or suggestions for improvement.
 
 ## Alternatives
 
-- The [Toga](https://github.com/beeware/toga) framework from the [BeeWare](https://beeware.org/) project provides a cross-platform GUI toolkit for Python that uses native controls. 
+- The [Toga](https://github.com/beeware/toga) framework from the [BeeWare](https://beeware.org/) project provides a cross-platform GUI toolkit for Python that uses native controls.
 - [Rubicon-ObjC](https://github.com/beeware/rubicon-objc), also from the BeeWare project, provides an alternative bridge between Python and Objective-C. It is used by the Toga framework. Unlike PyObjc, Rubicon-ObjC works on iOS as well as macOS. My code targets only macOS and I am familiar with PyObjC, which is more mature, so I chose to use it for this project.
 
 ## References
