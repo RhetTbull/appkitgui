@@ -80,9 +80,9 @@ def chooseFile_(self, sender):
     pass
 ```
 
-which is equivalent to an Objective-C method named `chooseFile:`.
+which is equivalent to an Objective-C selector named `chooseFile:`.
 
-If you prefer to use a more Pythonic method name, you can decorate the target method with the `objc.selector` decorator. For example:
+If you prefer to use a more Pythonic method name, you can decorate the target method with the `@objc.method` decorator. For example:
 
 ```python
 @objc_method(selector=b"chooseFile:")
