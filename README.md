@@ -4,7 +4,7 @@ This is an example project showing how to create a native macOS GUI application 
 
 ## Why This Project
 
-I wrote this to help me learn how to programmatically create a GUI application using native macOS controls without using XCode / Interface Builder. I could not find many examples of how to do this so I created this to help me learn how to do it.
+I wrote this to help me learn how to programmatically create a GUI application using native macOS controls without using XCode / Interface Builder. I could not find many examples of how to do this so I created this to help me learn how to do it. The usual way of building a Mac GUI app is to use [XCode and Interface Builder](https://developer.apple.com/xcode/) to create the GUI layout then connect code to the GUI controls. The layout is stored in a [NIB or XIB](https://en.wikipedia.org/wiki/Interface_Builder#Design) which is loaded by the app at startup. This significantly reduces boiler plate code in AppKit applications. It is possible to [load a NIB/XIB file in PyObjC](https://pyobjc.readthedocs.io/en/latest/tutorials/intro.html#the-nib-file) and this is what PyObjC encourages. For various reasons, I wanted to be able to create the entire application programmatically without using XCode and using a NIB/XIB file. This project demonstrates how to do so for a very basic app. This should be enough to get you started if you want to do something similar.
 
 ## Requirements
 
