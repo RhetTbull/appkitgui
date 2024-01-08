@@ -192,6 +192,7 @@ I'm certain there are better ways to do this. The AppKit framework provides many
 - [PyObjC documentation](https://pyobjc.readthedocs.io/en/latest/index.html)
 - The [Apple Auto Layout Guide](https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/AutolayoutPG/index.html#//apple_ref/doc/uid/TP40010853-CH7-SW1) is worth studying to understand how layout constraints work.
 - [Apple AppKit Framework Reference](https://developer.apple.com/documentation/appkit)
+- [An Epic Introduction to PyObjC and Cocoa](https://lethain.com/an-epic-introduction-to-pyobjc-and-cocoa/)
 
 ## LICENSE
 
