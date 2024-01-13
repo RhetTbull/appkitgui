@@ -177,6 +177,10 @@ Comparing the two examples, the second one takes a bit more work to set up but o
 
 This project makes use of `NSStackView` to layout the controls in the window.
 
+### Properties
+
+With PyObjC, properties on the Objective-C objects are usually accessed using getter and setter functions. The getter is the name of the property and the setter is `setProperty_` where `Property` is the name of the property with the first letter capitalized. For example, the `title` property of `NSButton` is accessed using the `title()` getter and `setTitle_()` setter.
+
 ## Implementation Notes
 
 I'm certain there are better ways to do this. The AppKit framework provides many different ways to create and use native controls. I've experimented and found something that worked but it may not be optimal. I welcome any feedback or suggestions for improvement.
