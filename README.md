@@ -22,6 +22,14 @@ Run the script:
 python3 appkitgui.py
 ```
 
+## Screenshot
+
+The project creates a single window with a few controls that looks like this:
+
+![Screenshot](screenshot.png)
+
+The controls will fire user-definable actions when clicked or activated.
+
 ## PyObjC Notes
 
 This project uses the [PyObjC](https://github.com/ronaldoussoren/pyobjc) framework by [Ronald Oussoren](https://github.com/ronaldoussoren). PyObjC acts as a bridge between Python and the native macOS Objective-C frameworks. PyObj is well maintained and kept current for the latest macOS releases however the documentation can be somewhat sparse and out of date. Some of what I needed to learn to create this project was done through trial and error and so I'm documenting it here for future reference. This is not intended to be a comprehensive guide to PyObjC but rather a collection of notes that I found useful.
