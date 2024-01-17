@@ -10,26 +10,19 @@ from AppKit import (
     NSApp,
     NSApplication,
     NSApplicationActivationPolicyRegular,
-    NSApplicationMain,
     NSAttributedString,
     NSBackingStoreBuffered,
     NSBox,
     NSBoxSeparator,
     NSButton,
-    NSButtonCell,
-    NSButtonTypeMomentaryChange,
-    NSButtonTypeMomentaryPushIn,
-    NSButtonTypeRadio,
     NSButtonTypeSwitch,
     NSColor,
     NSComboBox,
     NSCursor,
-    NSCursorAttributeName,
     NSFileHandlingPanelOKButton,
     NSForegroundColorAttributeName,
     NSImage,
     NSImageAlignTopLeft,
-    NSImageScaleProportionallyDown,
     NSImageScaleProportionallyUpOrDown,
     NSImageView,
     NSLayoutAttributeBottom,
@@ -61,8 +54,6 @@ from AppKit import (
     NSMakeRect,
     NSMenu,
     NSMenuItem,
-    NSModalPanelWindowLevel,
-    NSMutableAttributedString,
     NSNormalWindowLevel,
     NSObject,
     NSOnState,
@@ -77,36 +68,24 @@ from AppKit import (
     NSStackViewDistributionFillProportionally,
     NSStackViewDistributionGravityAreas,
     NSStackViewGravityTop,
-    NSStatusBar,
     NSTextField,
-    NSTextView,
-    NSTitledWindowMask,
-    NSTrackingActiveAlways,
-    NSTrackingArea,
-    NSTrackingInVisibleRect,
-    NSTrackingMouseEnteredAndExited,
     NSUnderlineStyleAttributeName,
     NSUnderlineStyleSingle,
     NSUserInterfaceLayoutOrientationHorizontal,
     NSUserInterfaceLayoutOrientationVertical,
-    NSVariableStatusItemLength,
-    NSViewMaxXMargin,
-    NSViewMaxYMargin,
-    NSViewMinXMargin,
-    NSViewMinYMargin,
-    NSViewWidthSizable,
     NSWindow,
     NSWindowStyleMaskClosable,
     NSWindowStyleMaskResizable,
     NSWindowStyleMaskTitled,
     NSWorkspace,
 )
-from Foundation import NSURL, NSMakeRange, NSMakeRect
+from Foundation import NSURL, NSMakeRect
 from objc import objc_method, python_method, super
 
 # constants
 EDGE_INSET = 20
 EDGE_INSETS = (EDGE_INSET, EDGE_INSET, EDGE_INSET, EDGE_INSET)
+PADDING = 8
 
 
 # helper functions to create AppKit objects
@@ -115,7 +94,7 @@ def hstack(
 ) -> NSStackView:
     """Create a horizontal NSStackView"""
     hstack = NSStackView.stackViewWithViews_(None).autorelease()
-    hstack.setSpacing_(8)
+    hstack.setSpacing_(PADDING)
     hstack.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
     hstack.setDistribution_(distribute)
     hstack.setAlignment_(align)
@@ -127,7 +106,7 @@ def vstack(
 ) -> NSStackView:
     """Create a vertical NSStackView"""
     vstack = NSStackView.stackViewWithViews_(None).autorelease()
-    vstack.setSpacing_(8)
+    vstack.setSpacing_(PADDING)
     vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
     vstack.setDistribution_(distribute)
     vstack.setAlignment_(align)
@@ -294,7 +273,7 @@ class DemoWindow(NSObject):
         """Create the main NStackView for the app and add it to the window"""
         main_view = NSStackView.stackViewWithViews_(None)
         main_view.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
-        main_view.setSpacing_(8)
+        main_view.setSpacing_(PADDING)
         main_view.setEdgeInsets_(EDGE_INSETS)
         main_view.setDistribution_(NSStackViewDistributionFill)
         main_view.setAlignment_(NSLayoutAttributeLeft)
