@@ -11,16 +11,22 @@ from AppKit import (
     NSApplication,
     NSApplicationActivationPolicyRegular,
     NSApplicationMain,
+    NSAttributedString,
     NSBackingStoreBuffered,
     NSBox,
     NSBoxSeparator,
     NSButton,
     NSButtonCell,
+    NSButtonTypeMomentaryChange,
+    NSButtonTypeMomentaryPushIn,
     NSButtonTypeRadio,
     NSButtonTypeSwitch,
     NSColor,
     NSComboBox,
+    NSCursor,
+    NSCursorAttributeName,
     NSFileHandlingPanelOKButton,
+    NSForegroundColorAttributeName,
     NSImage,
     NSImageAlignTopLeft,
     NSImageScaleProportionallyDown,
@@ -50,10 +56,13 @@ from AppKit import (
     NSLayoutRelationEqual,
     NSLayoutRelationGreaterThanOrEqual,
     NSLayoutRelationLessThanOrEqual,
+    NSLineBreakByTruncatingTail,
+    NSLinkAttributeName,
     NSMakeRect,
     NSMenu,
     NSMenuItem,
     NSModalPanelWindowLevel,
+    NSMutableAttributedString,
     NSNormalWindowLevel,
     NSObject,
     NSOnState,
@@ -70,7 +79,14 @@ from AppKit import (
     NSStackViewGravityTop,
     NSStatusBar,
     NSTextField,
+    NSTextView,
     NSTitledWindowMask,
+    NSTrackingActiveAlways,
+    NSTrackingArea,
+    NSTrackingInVisibleRect,
+    NSTrackingMouseEnteredAndExited,
+    NSUnderlineStyleAttributeName,
+    NSUnderlineStyleSingle,
     NSUserInterfaceLayoutOrientationHorizontal,
     NSUserInterfaceLayoutOrientationVertical,
     NSVariableStatusItemLength,
@@ -83,9 +99,10 @@ from AppKit import (
     NSWindowStyleMaskClosable,
     NSWindowStyleMaskResizable,
     NSWindowStyleMaskTitled,
+    NSWorkspace,
 )
-from Foundation import NSMakeRect, NSMakeSize
-from objc import objc_method, python_method
+from Foundation import NSURL, NSMakeRange, NSMakeRect
+from objc import objc_method, python_method, super
 
 # constants
 EDGE_INSET = 20
@@ -124,6 +141,56 @@ def label(value: str) -> NSTextField:
     label.setBordered_(False)
     label.setBackgroundColor_(NSColor.clearColor())
     return label
+
+
+class LinkLabel(NSTextField):
+    """Uneditable text field that displays a clickable link"""
+
+    def initWithText_URL_(self, text: str, url: str):
+        self = super().init()
+
+        if not self:
+            return
+
+        attr_str = self.attributedStringWithLinkToURL_text_(url, text)
+        self.setAttributedStringValue_(attr_str)
+        self.url = NSURL.URLWithString_(url)
+        self.setBordered_(False)
+        self.setSelectable_(False)
+        self.setEditable_(False)
+        self.setBezeled_(False)
+        self.setDrawsBackground_(False)
+
+        return self
+
+    def resetCursorRects(self):
+        self.addCursorRect_cursor_(self.bounds(), NSCursor.pointingHandCursor())
+
+    def mouseDown_(self, event):
+        print("mouseDown:", event)
+        NSWorkspace.sharedWorkspace().openURL_(self.url)
+
+    def mouseEntered_(self, event):
+        NSCursor.pointingHandCursor().push()
+
+    def mouseExited_(self, event):
+        NSCursor.pop()
+
+    def attributedStringWithLinkToURL_text_(self, url: str, text: str):
+        linkAttributes = {
+            NSLinkAttributeName: NSURL.URLWithString_(url),
+            NSUnderlineStyleAttributeName: NSUnderlineStyleSingle,
+            NSForegroundColorAttributeName: NSColor.linkColor(),
+            # NSCursorAttributeName: NSCursor.pointingHandCursor(),
+        }
+        return NSAttributedString.alloc().initWithString_attributes_(
+            text, linkAttributes
+        )
+
+
+def link(text: str, url: str) -> NSTextField:
+    """Create a clickable link label"""
+    return LinkLabel.alloc().initWithText_URL_(text, url)
 
 
 def button(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
@@ -260,6 +327,11 @@ class DemoWindow(NSObject):
 
             self.label_hello = label("Hello World")
             self.main_view.addArrangedSubview_(self.label_hello)
+
+            self.link = link(
+                "AppKitGUI on GitHub", "https://github.com/RhetTbull/appkitgui"
+            )
+            self.main_view.addArrangedSubview_(self.link)
 
             # add a horizontal NSStackView to hold widgets side by side
             # and add it to the main view
