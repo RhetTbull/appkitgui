@@ -19,8 +19,10 @@ pip3 install -r requirements.txt
 Run the script:
 
 ```bash
-python3 appkitgui.py
+python3 example.py
 ```
+
+The `example.py` script imports several helper functions from `appkitgui.py` which are used to help create and manage the views and controls.
 
 ## Screenshot
 
