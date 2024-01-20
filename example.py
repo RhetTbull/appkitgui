@@ -184,7 +184,7 @@ class DemoWindow(NSObject):
             self.hstack1.addArrangedSubview_(self.label_file)
 
             # create side by side vertical NSStackViews to hold checkboxes and radio buttons
-            self.hstack2 = hstack()
+            self.hstack2 = hstack(align=NSLayoutAttributeTop)
             self.main_view.addArrangedSubview_(self.hstack2)
 
             self.vstack1 = vstack()
@@ -208,13 +208,27 @@ class DemoWindow(NSObject):
             self.vstack2.addArrangedSubview_(self.radio3)
             self.radio1.setState_(NSOnState)
 
-            # add a combo box; set the delegate to self so we can handle
-            # selection changes via the delegate method comboBoxSelectionDidChange_
+            # add an uneditable combo box
             # TODO: the size of the combo box is not preserved--it always resizes to the contents
-            self.combo_box = combo_box(
-                ["Combo 1", "Combo 2", "Combo 3"], self, self.comboBoxAction_, self
+            self.combo_box_1 = combo_box(
+                ["Combo 1", "Combo 2", "Combo 3"],
+                self,
+                editable=False,
+                action_change=self.comboBoxAction_,
             )
-            self.hstack2.addArrangedSubview_(self.combo_box)
+            self.hstack2.addArrangedSubview_(self.combo_box_1)
+
+            # add an editable combo box
+            self.combo_box_2 = combo_box(
+                ["Edit me and hit return", "Combo 2", "Combo 3"],
+                self,
+                editable=True,
+                # you can also pass a string to be used as the selector
+                # which must be name of a method in the target object (self in this case)
+                action_change="comboBoxAction:",
+                action_return="comboBoxEdited:",
+            )
+            self.hstack2.addArrangedSubview_(self.combo_box_2)
 
             # add a horizontal separator
             self.hsep = hseparator()
@@ -253,21 +267,14 @@ class DemoWindow(NSObject):
         print("Radio button selected: ", sender.selectedCell().title())
 
     def comboBoxAction_(self, sender):
-        """Handle combo box action"""
-        # This gets called when the user hits return in the combo box
-        # which they cannot do if the combo box is not editable
-        print("Combo box: ", sender.objectValueOfSelectedItem())
-
-    def comboBoxSelectionDidChange_(self, notification):
         """Handle combo box selection change"""
-        # This is a delegate method and is called when the user selects
-        # an item in the combo box
-        # For this to work, the combo box delegate must be set to self
-        if not getattr(self, "combo_box", None):
-            return
-        print(
-            "Combo box selection changed: ", self.combo_box.objectValueOfSelectedItem()
-        )
+        # This gets called when the user selects an item in the combo box
+        print("Combo box selection: ", sender.objectValueOfSelectedItem())
+
+    def comboBoxEdited_(self, sender):
+        """Handle combo box return"""
+        # This gets called when user hits return in the combo box
+        print("Combo box edited: ", sender.stringValue())
 
     def openWindow_(self, sender):
         print("openWindow")

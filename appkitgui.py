@@ -214,28 +214,97 @@ def radio_button(
     return radio_button
 
 
+class ComboBoxDelegate(NSObject):
+    """Helper class to handle combo box events"""
+
+    def initWithTarget_Action_(self, target: NSObject, action: Callable | str | None):
+        self = super().init()
+        if not self:
+            return
+
+        self.target = target
+        self.action_change = action
+        return self
+
+    @objc_method
+    def comboBoxSelectionDidChange_(self, notification):
+        if self.action_change:
+            if type(self.action_change) == str:
+                self.target.performSelector_withObject_(
+                    self.action_change, notification.object()
+                )
+            else:
+                self.action_change(notification.object())
+
+    # this is not currently used, handled by action_return
+    # @objc_method
+    # def comboBox_textView_doCommandBySelector_(
+    #     self, combo_box, text_view, command_selector
+    # ):
+    #     if command_selector == b"insertNewline:":
+    #         if self.action_return:
+    #             self.action_return()
+    #         return True
+    #     return False
+
+
+class ComboBox(NSComboBox):
+    """NSComboBox that stores a reference it's delegate
+
+    Note:
+        This is required to maintain a reference to the delegate, otherwise it will
+        not be retained after the ComboBox is created.
+    """
+
+    def setDelegate_(self, delegate: NSObject | None):
+        self.delegate = delegate
+        if delegate is not None:
+            super().setDelegate_(delegate)
+
+
 def combo_box(
     values: list[str] | None,
     target: NSObject,
-    action: Callable | str | None,
+    editable: bool = False,
+    action_return: Callable | str | None = None,
+    action_change: Callable | str | None = None,
     delegate: NSObject | None = None,
 ) -> NSComboBox:
-    """Create a combo box"""
+    """Create a combo box
+
+    Args:
+        values: list of values to populate the combo box with
+        target: target to send action to
+        editable: whether the combo box is editable
+        action_return: action to send when return is pressed (only called if editable is True)
+        action_change: action to send when the selection is changed
+        delegate: delegate to handle events; if not provided a default delegate is automatically created
+
+
+    Note:
+        In order to handle certain events such as return being pressed, a delegate is
+        required. If a delegate is not provided, a default delegate is automatically
+        created which will call the action_return callback when return is pressed.
+        If a delegate is provided, it may implement the following methods:
+
+                - comboBoxSelectionDidChange
+                - comboBox_textView_doCommandBySelector
+    """
 
     # TODO: the size of the combo box is not preserved--it always resizes to the contents
-    combo_box = (
-        NSComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25)).autorelease()
-    )
+    combo_box = ComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25)).autorelease()
     combo_box.setTarget_(target)
+    delegate = delegate or ComboBoxDelegate.alloc().initWithTarget_Action_(
+        target, action_change
+    )
+    combo_box.setDelegate_(delegate)
     if values:
         combo_box.addItemsWithObjectValues_(values)
         combo_box.selectItemAtIndex_(0)
-    if delegate:
-        combo_box.setDelegate_(delegate)
-    if action:
-        combo_box.setAction_(action)
+    if action_return:
+        combo_box.setAction_(action_return)
     combo_box.setCompletes_(True)
-    combo_box.setEditable_(False)
+    combo_box.setEditable_(editable)
     return combo_box
 
 
