@@ -85,6 +85,7 @@ from appkitgui import (
     button,
     checkbox,
     combo_box,
+    constrain_to_parent_width,
     hseparator,
     hstack,
     image_view,
@@ -234,9 +235,7 @@ class DemoWindow(NSObject):
             self.hsep = hseparator()
             self.main_view.addArrangedSubview_(self.hsep)
             # constrain the separator to the left and right edges of the main view, inset by EDGE_INSET
-            self.hsep.rightAnchor().constraintEqualToAnchor_constant_(
-                self.main_view.rightAnchor(), -EDGE_INSET
-            ).setActive_(True)
+            constrain_to_parent_width(self.hsep, self.main_view, EDGE_INSET)
 
             # add an image
             self.image = image_view("image.jpeg", width=200)
