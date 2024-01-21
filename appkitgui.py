@@ -1,4 +1,4 @@
-"""Utilities to help create a native macOS GUI with AppKit"""
+"""Toolkit to help create a native macOS GUI with AppKit"""
 
 
 from __future__ import annotations
@@ -6,84 +6,18 @@ from __future__ import annotations
 import os
 from typing import Callable
 
-import objc
+import AppKit
 from AppKit import (
-    NSAttributedString,
-    NSBackingStoreBuffered,
     NSBox,
-    NSBoxSeparator,
     NSButton,
-    NSButtonTypeSwitch,
-    NSColor,
     NSComboBox,
-    NSCursor,
-    NSFileHandlingPanelOKButton,
-    NSFloatingWindowLevel,
-    NSForegroundColorAttributeName,
-    NSImage,
-    NSImageAlignTopLeft,
-    NSImageScaleProportionallyUpOrDown,
     NSImageView,
-    NSLayoutAttributeBottom,
-    NSLayoutAttributeCenterX,
-    NSLayoutAttributeCenterY,
-    NSLayoutAttributeFirstBaseline,
-    NSLayoutAttributeHeight,
-    NSLayoutAttributeLastBaseline,
-    NSLayoutAttributeLeading,
-    NSLayoutAttributeLeft,
-    NSLayoutAttributeNotAnAttribute,
-    NSLayoutAttributeRight,
-    NSLayoutAttributeTop,
-    NSLayoutAttributeTrailing,
-    NSLayoutAttributeWidth,
-    NSLayoutConstraint,
-    NSLayoutConstraintOrientationVertical,
-    NSLayoutPriorityDefaultHigh,
-    NSLayoutPriorityDefaultLow,
-    NSLayoutPriorityDragThatCannotResizeWindow,
-    NSLayoutPriorityDragThatCanResizeWindow,
-    NSLayoutPriorityFittingSizeCompression,
-    NSLayoutPriorityRequired,
-    NSLayoutPriorityWindowSizeStayPut,
-    NSLayoutRelationEqual,
-    NSLayoutRelationGreaterThanOrEqual,
-    NSLayoutRelationLessThanOrEqual,
-    NSLineBreakByTruncatingTail,
-    NSLinkAttributeName,
-    NSMakeRect,
-    NSMenu,
-    NSMenuItem,
-    NSNormalWindowLevel,
-    NSObject,
-    NSOffState,
-    NSOnState,
-    NSOpenPanel,
-    NSProcessInfo,
-    NSRadioButton,
     NSStackView,
-    NSStackViewDistributionEqualCentering,
-    NSStackViewDistributionEqualSpacing,
-    NSStackViewDistributionFill,
-    NSStackViewDistributionFillEqually,
-    NSStackViewDistributionFillProportionally,
-    NSStackViewDistributionGravityAreas,
-    NSStackViewGravityLeading,
-    NSStackViewGravityTop,
     NSTextField,
-    NSUnderlineStyleAttributeName,
-    NSUnderlineStyleSingle,
-    NSUserInterfaceLayoutOrientationHorizontal,
-    NSUserInterfaceLayoutOrientationVertical,
     NSView,
-    NSWindow,
-    NSWindowStyleMaskClosable,
-    NSWindowStyleMaskResizable,
-    NSWindowStyleMaskTitled,
-    NSWorkspace,
 )
-from Foundation import NSURL, NSMakeRect
-from objc import objc_method, python_method, super
+from Foundation import NSURL, NSMakeRect, NSObject
+from objc import objc_method, super
 
 # constants
 
@@ -96,13 +30,13 @@ PADDING = 8
 
 # helper functions to create AppKit objects
 def hstack(
-    align: int = NSLayoutAttributeCenterY, distribute: int | None = None
+    align: int = AppKit.NSLayoutAttributeCenterY, distribute: int | None = None
 ) -> NSStackView:
     """Create a horizontal NSStackView"""
     distribute = None
     hstack = NSStackView.stackViewWithViews_(None).autorelease()
     hstack.setSpacing_(PADDING)
-    hstack.setOrientation_(NSUserInterfaceLayoutOrientationHorizontal)
+    hstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationHorizontal)
     if distribute is not None:
         hstack.setDistribution_(distribute)
     hstack.setAlignment_(align)
@@ -110,12 +44,12 @@ def hstack(
 
 
 def vstack(
-    align: int = NSLayoutAttributeLeft, distribute: int | None = None
+    align: int = AppKit.NSLayoutAttributeLeft, distribute: int | None = None
 ) -> NSStackView:
     """Create a vertical NSStackView"""
     vstack = NSStackView.stackViewWithViews_(None).autorelease()
     vstack.setSpacing_(PADDING)
-    vstack.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
+    vstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
     if distribute is not None:
         vstack.setDistribution_(distribute)
     vstack.setAlignment_(align)
@@ -132,7 +66,7 @@ def label(value: str) -> NSTextField:
     label = NSTextField.labelWithString_(value).autorelease()
     label.setEditable_(False)
     label.setBordered_(False)
-    label.setBackgroundColor_(NSColor.clearColor())
+    label.setBackgroundColor_(AppKit.NSColor.clearColor())
     return label
 
 
@@ -157,26 +91,26 @@ class LinkLabel(NSTextField):
         return self
 
     def resetCursorRects(self):
-        self.addCursorRect_cursor_(self.bounds(), NSCursor.pointingHandCursor())
+        self.addCursorRect_cursor_(self.bounds(), AppKit.NSCursor.pointingHandCursor())
 
     def mouseDown_(self, event):
         print("mouseDown:", event)
-        NSWorkspace.sharedWorkspace().openURL_(self.url)
+        AppKit.NSWorkspace.sharedWorkspace().openURL_(self.url)
 
     def mouseEntered_(self, event):
-        NSCursor.pointingHandCursor().push()
+        AppKit.NSCursor.pointingHandCursor().push()
 
     def mouseExited_(self, event):
-        NSCursor.pop()
+        AppKit.NSCursor.pop()
 
     def attributedStringWithLinkToURL_text_(self, url: str, text: str):
         linkAttributes = {
-            NSLinkAttributeName: NSURL.URLWithString_(url),
-            NSUnderlineStyleAttributeName: NSUnderlineStyleSingle,
-            NSForegroundColorAttributeName: NSColor.linkColor(),
-            # NSCursorAttributeName: NSCursor.pointingHandCursor(),
+            AppKit.NSLinkAttributeName: NSURL.URLWithString_(url),
+            AppKit.NSUnderlineStyleAttributeName: AppKit.NSUnderlineStyleSingle,
+            AppKit.NSForegroundColorAttributeName: AppKit.NSColor.linkColor(),
+            # AppKit.NSCursorAttributeName: AppKit.NSCursor.pointingHandCursor(),
         }
-        return NSAttributedString.alloc().initWithString_attributes_(
+        return AppKit.NSAttributedString.alloc().initWithString_attributes_(
             text, linkAttributes
         )
 
@@ -199,7 +133,7 @@ def checkbox(title: str, target: NSObject, action: Callable | str | None) -> NSB
     checkbox = NSButton.buttonWithTitle_target_action_(
         title, target, action
     ).autorelease()
-    checkbox.setButtonType_(NSButtonTypeSwitch)  # Switch button type
+    checkbox.setButtonType_(AppKit.NSButtonTypeSwitch)  # Switch button type
     return checkbox
 
 
@@ -210,7 +144,7 @@ def radio_button(
     radio_button = NSButton.buttonWithTitle_target_action_(
         title, target, action
     ).autorelease()
-    radio_button.setButtonType_(NSRadioButton)
+    radio_button.setButtonType_(AppKit.NSRadioButton)
     return radio_button
 
 
@@ -315,7 +249,7 @@ def combo_box(
 def hseparator() -> NSBox:
     """Create a horizontal separator"""
     separator = NSBox.alloc().init().autorelease()
-    separator.setBoxType_(NSBoxSeparator)
+    separator.setBoxType_(AppKit.NSBoxSeparator)
     separator.setTranslatesAutoresizingMaskIntoConstraints_(False)
     return separator
 
@@ -324,10 +258,10 @@ def image_view(
     path: str | os.PathLike, width: int | None = None, height: int | None = None
 ) -> NSImageView:
     """Create an image from a file"""
-    image = NSImage.alloc().initByReferencingFile_(str(path)).autorelease()
+    image = AppKit.NSImage.alloc().initByReferencingFile_(str(path)).autorelease()
     image_view = NSImageView.imageViewWithImage_(image).autorelease()
-    image_view.setImageScaling_(NSImageScaleProportionallyUpOrDown)
-    image_view.setImageAlignment_(NSImageAlignTopLeft)
+    image_view.setImageScaling_(AppKit.NSImageScaleProportionallyUpOrDown)
+    image_view.setImageAlignment_(AppKit.NSImageAlignTopLeft)
     if width:
         image_view.widthAnchor().constraintEqualToConstant_(width).setActive_(True)
     if height:
@@ -400,12 +334,12 @@ def constrain_stacks_side_by_side(
         else:
             weight = 1.0
 
-        NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+        AppKit.NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
             stack,
-            NSLayoutAttributeWidth,
-            NSLayoutRelationEqual,
+            AppKit.NSLayoutAttributeWidth,
+            AppKit.NSLayoutRelationEqual,
             stacks[min_index],
-            NSLayoutAttributeWidth,
+            AppKit.NSLayoutAttributeWidth,
             weight,
             0.0,
         ).setActive_(
@@ -431,9 +365,10 @@ def constrain_to_parent_width(
         parent.leftAnchor(), edge_inset
     ).setActive_(True)
 
+
 def constrain_to_width(view: NSView, width: float | None = None):
     """Constrain an NSView to a fixed width
-    
+
     Args:
         view: NSView to constrain
         width: width to constrain to; if None, does not apply a width constraint
