@@ -269,6 +269,7 @@ def combo_box(
     action_return: Callable | str | None = None,
     action_change: Callable | str | None = None,
     delegate: NSObject | None = None,
+    width: float | None = None,
 ) -> NSComboBox:
     """Create a combo box
 
@@ -279,6 +280,7 @@ def combo_box(
         action_return: action to send when return is pressed (only called if editable is True)
         action_change: action to send when the selection is changed
         delegate: delegate to handle events; if not provided a default delegate is automatically created
+        width: width of the combo box; if None, the combo box will resize to the contents
 
 
     Note:
@@ -291,7 +293,6 @@ def combo_box(
                 - comboBox_textView_doCommandBySelector
     """
 
-    # TODO: the size of the combo box is not preserved--it always resizes to the contents
     combo_box = ComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25)).autorelease()
     combo_box.setTarget_(target)
     delegate = delegate or ComboBoxDelegate.alloc().initWithTarget_Action_(
@@ -305,6 +306,9 @@ def combo_box(
         combo_box.setAction_(action_return)
     combo_box.setCompletes_(True)
     combo_box.setEditable_(editable)
+
+    if width is not None:
+        constrain_to_width(combo_box, width)
     return combo_box
 
 
@@ -426,3 +430,13 @@ def constrain_to_parent_width(
     view.leftAnchor().constraintEqualToAnchor_constant_(
         parent.leftAnchor(), edge_inset
     ).setActive_(True)
+
+def constrain_to_width(view: NSView, width: float | None = None):
+    """Constrain an NSView to a fixed width
+    
+    Args:
+        view: NSView to constrain
+        width: width to constrain to; if None, does not apply a width constraint
+    """
+    if width is not None:
+        view.widthAnchor().constraintEqualToConstant_(width).setActive_(True)
