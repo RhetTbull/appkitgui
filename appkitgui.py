@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from typing import Callable
 
 import AppKit
@@ -17,7 +18,7 @@ from AppKit import (
     NSView,
 )
 from Foundation import NSURL, NSMakeRect, NSObject
-from objc import objc_method, super
+from objc import objc_method, python_method, super
 
 # constants
 
@@ -28,13 +29,38 @@ EDGE_INSET = 20
 PADDING = 8
 
 
+class StackView(NSStackView):
+    """NSStackView that supports list methods for adding child views"""
+
+    @python_method
+    def append(self, view: NSView):
+        """Add view to stack"""
+        self.addArrangedSubview_(view)
+
+    @python_method
+    def extend(self, views: Iterable[NSView]):
+        """Extend stack with the contents of views"""
+        for view in views:
+            self.append(view)
+
+    @python_method
+    def insert(self, i: int, view: NSView):
+        """Insert view at index i"""
+        self.insertArrangedSubview_atIndex_(view, i)
+
+    @python_method
+    def remove(self, view: NSView):
+        """Remove view from the stack"""
+        self.removeArrangedSubview_(view)
+
+
 # helper functions to create AppKit objects
 def hstack(
     align: int = AppKit.NSLayoutAttributeCenterY, distribute: int | None = None
-) -> NSStackView:
-    """Create a horizontal NSStackView"""
+) -> StackView:
+    """Create a horizontal StackView"""
     distribute = None
-    hstack = NSStackView.stackViewWithViews_(None).autorelease()
+    hstack = StackView.stackViewWithViews_(None)
     hstack.setSpacing_(PADDING)
     hstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationHorizontal)
     if distribute is not None:
@@ -45,9 +71,9 @@ def hstack(
 
 def vstack(
     align: int = AppKit.NSLayoutAttributeLeft, distribute: int | None = None
-) -> NSStackView:
-    """Create a vertical NSStackView"""
-    vstack = NSStackView.stackViewWithViews_(None).autorelease()
+) -> StackView:
+    """Create a vertical StackView"""
+    vstack = StackView.stackViewWithViews_(None)
     vstack.setSpacing_(PADDING)
     vstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
     if distribute is not None:
@@ -63,7 +89,7 @@ def hspacer() -> NSStackView:
 
 def label(value: str) -> NSTextField:
     """Create a label"""
-    label = NSTextField.labelWithString_(value).autorelease()
+    label = NSTextField.labelWithString_(value)
     label.setEditable_(False)
     label.setBordered_(False)
     label.setBackgroundColor_(AppKit.NSColor.clearColor())
@@ -122,17 +148,13 @@ def link(text: str, url: str) -> NSTextField:
 
 def button(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
     """Create a button"""
-    button = NSButton.buttonWithTitle_target_action_(
-        title, target, action
-    ).autorelease()
+    button = NSButton.buttonWithTitle_target_action_(title, target, action)
     return button
 
 
 def checkbox(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
     """Create a checkbox button"""
-    checkbox = NSButton.buttonWithTitle_target_action_(
-        title, target, action
-    ).autorelease()
+    checkbox = NSButton.buttonWithTitle_target_action_(title, target, action)
     checkbox.setButtonType_(AppKit.NSButtonTypeSwitch)  # Switch button type
     return checkbox
 
@@ -141,9 +163,7 @@ def radio_button(
     title: str, target: NSObject, action: Callable | str | None
 ) -> NSButton:
     """Create a radio button"""
-    radio_button = NSButton.buttonWithTitle_target_action_(
-        title, target, action
-    ).autorelease()
+    radio_button = NSButton.buttonWithTitle_target_action_(title, target, action)
     radio_button.setButtonType_(AppKit.NSRadioButton)
     return radio_button
 
@@ -227,7 +247,7 @@ def combo_box(
                 - comboBox_textView_doCommandBySelector
     """
 
-    combo_box = ComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25)).autorelease()
+    combo_box = ComboBox.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25))
     combo_box.setTarget_(target)
     delegate = delegate or ComboBoxDelegate.alloc().initWithTarget_Action_(
         target, action_change
@@ -248,7 +268,7 @@ def combo_box(
 
 def hseparator() -> NSBox:
     """Create a horizontal separator"""
-    separator = NSBox.alloc().init().autorelease()
+    separator = NSBox.alloc().init()
     separator.setBoxType_(AppKit.NSBoxSeparator)
     separator.setTranslatesAutoresizingMaskIntoConstraints_(False)
     return separator
@@ -258,8 +278,8 @@ def image_view(
     path: str | os.PathLike, width: int | None = None, height: int | None = None
 ) -> NSImageView:
     """Create an image from a file"""
-    image = AppKit.NSImage.alloc().initByReferencingFile_(str(path)).autorelease()
-    image_view = NSImageView.imageViewWithImage_(image).autorelease()
+    image = AppKit.NSImage.alloc().initByReferencingFile_(str(path))
+    image_view = NSImageView.imageViewWithImage_(image)
     image_view.setImageScaling_(AppKit.NSImageScaleProportionallyUpOrDown)
     image_view.setImageAlignment_(AppKit.NSImageAlignTopLeft)
     if width:
@@ -283,11 +303,11 @@ def constrain_stacks_side_by_side(
     padding: int = 0,
     edge_inset: int = 0,
 ):
-    """Constrain a list of NSStackViews to be side by side and equal width or weighted widths
+    """Constrain a list of NSStackViews to be side by side optionally using weighted widths
 
     Args:
         *stacks: NSStackViews to constrain
-        weights: weights to use for each stack; if None, all stacks are equal width
+        weights: optional weights to use for each stack
         parent: NSStackView to constrain the stacks to; if None, uses stacks[0].superview()
         padding: padding between stacks
         edge_inset: padding between stacks and parent
@@ -329,10 +349,10 @@ def constrain_stacks_side_by_side(
             parent.bottomAnchor(), -edge_inset
         ).setActive_(True)
 
-        if weights is not None:
-            weight = weights[i] / min_weight
-        else:
-            weight = 1.0
+        if not weights:
+            continue
+
+        weight = weights[i] / min_weight
 
         AppKit.NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
             stack,

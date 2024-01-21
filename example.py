@@ -1,90 +1,34 @@
-"""Create a simple macOS app with AppKit & pyobjc"""
+"""Create a simple macOS app with AppKit & pyobjc
+
+This makes use of the appkitgui toolkit which simplifies widget creation and layout
+"""
 
 from __future__ import annotations
 
-from typing import Callable
-
+import AppKit
 import objc
 from AppKit import (
     NSApp,
     NSApplication,
-    NSApplicationActivationPolicyRegular,
-    NSAttributedString,
-    NSBackingStoreBuffered,
-    NSBox,
-    NSBoxSeparator,
     NSButton,
-    NSButtonTypeSwitch,
-    NSColor,
-    NSComboBox,
-    NSCursor,
-    NSFileHandlingPanelOKButton,
-    NSForegroundColorAttributeName,
-    NSImage,
-    NSImageAlignTopLeft,
-    NSImageScaleProportionallyUpOrDown,
-    NSImageView,
-    NSLayoutAttributeBottom,
-    NSLayoutAttributeCenterX,
-    NSLayoutAttributeCenterY,
-    NSLayoutAttributeFirstBaseline,
-    NSLayoutAttributeHeight,
-    NSLayoutAttributeLastBaseline,
-    NSLayoutAttributeLeading,
-    NSLayoutAttributeLeft,
-    NSLayoutAttributeNotAnAttribute,
-    NSLayoutAttributeRight,
-    NSLayoutAttributeTop,
-    NSLayoutAttributeTrailing,
-    NSLayoutAttributeWidth,
-    NSLayoutConstraintOrientationVertical,
-    NSLayoutPriorityDefaultHigh,
-    NSLayoutPriorityDefaultLow,
-    NSLayoutPriorityDragThatCannotResizeWindow,
-    NSLayoutPriorityDragThatCanResizeWindow,
-    NSLayoutPriorityFittingSizeCompression,
-    NSLayoutPriorityRequired,
-    NSLayoutPriorityWindowSizeStayPut,
-    NSLayoutRelationEqual,
-    NSLayoutRelationGreaterThanOrEqual,
-    NSLayoutRelationLessThanOrEqual,
-    NSLineBreakByTruncatingTail,
-    NSLinkAttributeName,
-    NSMakeRect,
     NSMenu,
     NSMenuItem,
-    NSNormalWindowLevel,
     NSObject,
     NSOnState,
     NSOpenPanel,
     NSProcessInfo,
-    NSRadioButton,
     NSStackView,
-    NSStackViewDistributionEqualCentering,
-    NSStackViewDistributionEqualSpacing,
-    NSStackViewDistributionFill,
-    NSStackViewDistributionFillEqually,
-    NSStackViewDistributionFillProportionally,
-    NSStackViewDistributionGravityAreas,
-    NSStackViewGravityTop,
-    NSTextField,
-    NSUnderlineStyleAttributeName,
-    NSUnderlineStyleSingle,
-    NSUserInterfaceLayoutOrientationHorizontal,
-    NSUserInterfaceLayoutOrientationVertical,
     NSWindow,
-    NSWindowStyleMaskClosable,
-    NSWindowStyleMaskResizable,
-    NSWindowStyleMaskTitled,
-    NSWorkspace,
 )
 from Foundation import NSMakeRect
 from objc import objc_method, python_method
 
 from appkitgui import (
+    StackView,
     button,
     checkbox,
     combo_box,
+    constrain_stacks_side_by_side,
     constrain_to_parent_width,
     hseparator,
     hstack,
@@ -111,10 +55,10 @@ class DemoWindow(NSObject):
         # conventions, not objc conventions
         window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
             NSMakeRect(0, 0, 600, 600),
-            NSWindowStyleMaskTitled
-            | NSWindowStyleMaskClosable
-            | NSWindowStyleMaskResizable,
-            NSBackingStoreBuffered,
+            AppKit.NSWindowStyleMaskTitled
+            | AppKit.NSWindowStyleMaskClosable
+            | AppKit.NSWindowStyleMaskResizable,
+            AppKit.NSBackingStoreBuffered,
             False,
         )
         window.center()
@@ -124,12 +68,15 @@ class DemoWindow(NSObject):
     @python_method
     def create_main_view_(self, window: NSWindow) -> NSStackView:
         """Create the main NStackView for the app and add it to the window"""
-        main_view = NSStackView.stackViewWithViews_(None)
-        main_view.setOrientation_(NSUserInterfaceLayoutOrientationVertical)
+
+        # This uses appkitgui.StackView which is a subclass of NSStackView
+        # that supports some list methods such as append, extend, remove, ...
+        main_view = StackView.stackViewWithViews_(None)
+        main_view.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
         main_view.setSpacing_(PADDING)
         main_view.setEdgeInsets_(EDGE_INSETS)
-        main_view.setDistribution_(NSStackViewDistributionFill)
-        main_view.setAlignment_(NSLayoutAttributeLeft)
+        main_view.setDistribution_(AppKit.NSStackViewDistributionFill)
+        main_view.setAlignment_(AppKit.NSLayoutAttributeLeft)
 
         window.contentView().addSubview_(main_view)
         top_constraint = main_view.topAnchor().constraintEqualToAnchor_(
@@ -158,17 +105,17 @@ class DemoWindow(NSObject):
             self.main_view = self.create_main_view_(self.window)
 
             self.label_hello = label("Hello World")
-            self.main_view.addArrangedSubview_(self.label_hello)
+            self.main_view.append(self.label_hello)
 
             self.link = link(
                 "AppKitGUI on GitHub", "https://github.com/RhetTbull/appkitgui"
             )
-            self.main_view.addArrangedSubview_(self.link)
+            self.main_view.append(self.link)
 
             # add a horizontal NSStackView to hold widgets side by side
             # and add it to the main view
             self.hstack1 = hstack()
-            self.main_view.addArrangedSubview_(self.hstack1)
+            self.main_view.append(self.hstack1)
 
             # add a button that activates a file chooser panel
             # the method chooseFile_ does not actually exist in this class
@@ -178,46 +125,41 @@ class DemoWindow(NSObject):
             # the string, "chooseFile:" could also be passed directly to the
             # action parameter of the button instead of the callable
             self.choose_file_button = button("Choose File", self, self.chooseFile_)
-            self.hstack1.addArrangedSubview_(self.choose_file_button)
+            self.hstack1.append(self.choose_file_button)
 
             # create a label which will be updated by choose_file when user chooses a file
             self.label_file = label("")
-            self.hstack1.addArrangedSubview_(self.label_file)
+            self.hstack1.append(self.label_file)
 
             # create side by side vertical NSStackViews to hold checkboxes and radio buttons
-            self.hstack2 = hstack(align=NSLayoutAttributeTop)
-            self.main_view.addArrangedSubview_(self.hstack2)
+            self.hstack2 = hstack(align=AppKit.NSLayoutAttributeTop)
+            self.main_view.append(self.hstack2)
 
             self.vstack1 = vstack()
-            self.hstack2.addArrangedSubview_(self.vstack1)
+            self.hstack2.append(self.vstack1)
 
             self.checkbox1 = checkbox("Checkbox 1", self, self.checkbox_action)
-            self.vstack1.addArrangedSubview_(self.checkbox1)
             self.checkbox2 = checkbox("Checkbox 2", self, self.checkbox_action)
-            self.vstack1.addArrangedSubview_(self.checkbox2)
             self.checkbox3 = checkbox("Checkbox 3", self, self.checkbox_action)
-            self.vstack1.addArrangedSubview_(self.checkbox3)
+            self.vstack1.extend([self.checkbox1, self.checkbox2, self.checkbox3])
 
             self.vstack2 = vstack()
-            self.hstack2.addArrangedSubview_(self.vstack2)
+            self.hstack2.append(self.vstack2)
 
             self.radio1 = radio_button("Radio 1", self, self.radioAction_)
             self.radio2 = radio_button("Radio 2", self, self.radioAction_)
             self.radio3 = radio_button("Radio 3", self, self.radioAction_)
-            self.vstack2.addArrangedSubview_(self.radio1)
-            self.vstack2.addArrangedSubview_(self.radio2)
-            self.vstack2.addArrangedSubview_(self.radio3)
+            self.vstack2.extend([self.radio1, self.radio2, self.radio3])
             self.radio1.setState_(NSOnState)
 
             # add an uneditable combo box
-            # TODO: the size of the combo box is not preserved--it always resizes to the contents
             self.combo_box_1 = combo_box(
                 ["Combo 1", "Combo 2", "Combo 3"],
                 self,
                 editable=False,
                 action_change=self.comboBoxAction_,
             )
-            self.hstack2.addArrangedSubview_(self.combo_box_1)
+            self.hstack2.append(self.combo_box_1)
 
             # add an editable combo box
             self.combo_box_2 = combo_box(
@@ -228,23 +170,44 @@ class DemoWindow(NSObject):
                 # which must be name of a method in the target object (self in this case)
                 action_change="comboBoxAction:",
                 action_return="comboBoxEdited:",
+                width=175,
             )
-            self.hstack2.addArrangedSubview_(self.combo_box_2)
+            self.hstack2.append(self.combo_box_2)
 
             # add a horizontal separator
             self.hsep = hseparator()
-            self.main_view.addArrangedSubview_(self.hsep)
+            self.main_view.append(self.hsep)
             # constrain the separator to the left and right edges of the main view, inset by EDGE_INSET
             constrain_to_parent_width(self.hsep, self.main_view, EDGE_INSET)
 
             # add an image
+            self.hstack3 = hstack()
+            self.main_view.append(self.hstack3)
             self.image = image_view("image.jpeg", width=200)
-            self.main_view.addArrangedSubview_(self.image)
+            self.hstack3.append(self.image)
+
+            # add a vertical stack to hold buttons
+            self.vstack3 = vstack()
+            self.hstack3.append(self.vstack3)
+            self.button_add = button("Add", self, self.button_add_to_stack)
+            self.button_remove = button("Remove", self, self.button_remove_from_stack)
+            self.vstack3.extend([self.button_add, self.button_remove])
+
+            # add a vertical stack to hold controls added/removed
+            self.vstack4 = vstack()
+            self.hstack3.append(self.vstack4)
+
+            # for reasons I haven't figured out, the NSImageView renders on top of
+            # the vertical stack, hiding the buttons
+            # to fix this, add constraints so the image and stack are side by side
+            constrain_stacks_side_by_side(
+                self.image, self.vstack3, self.vstack4, padding=PADDING * 2
+            )
 
             # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
             self.window.setIsVisible_(True)
-            self.window.setLevel_(NSNormalWindowLevel)
+            self.window.setLevel_(AppKit.NSNormalWindowLevel)
             self.window.setReleasedWhenClosed_(False)
             return self.window
 
@@ -290,12 +253,35 @@ class DemoWindow(NSObject):
         open_panel.setCanChooseFiles_(True)
         open_panel.setCanChooseDirectories_(False)
         open_panel.setAllowsMultipleSelection_(False)
-        if open_panel.runModal() == NSFileHandlingPanelOKButton:
+        if open_panel.runModal() == AppKit.NSFileHandlingPanelOKButton:
             file_url = open_panel.URLs()[0].fileSystemRepresentation().decode("utf-8")
             self.label_file.setStringValue_(file_url)
             print(f"choose_file: {file_url}")
         else:
             print("choose_file: Canceled")
+
+    @objc_method(selector=b"buttonAddToStack:")
+    def button_add_to_stack(self, sender):
+        if not getattr(self, "label_stack", None):
+            self.label_stack = []
+
+        i = len(self.label_stack)
+        new_label = label(f"Item {i}")
+
+        # keep a reference to the label
+        self.label_stack.append(new_label)
+
+        # add it to the stack view
+        self.vstack4.append(new_label)
+
+    @objc_method(selector=b"buttonRemoveFromStack:")
+    def button_remove_from_stack(self, sender):
+        if not getattr(self, "label_stack", None):
+            return
+        label_to_remove = self.label_stack.pop()
+        label_to_remove.setHidden_(True)
+        self.vstack4.removeArrangedSubview_(label_to_remove)
+        label_to_remove.removeFromSuperview()
 
 
 class AppDelegate(NSObject):
@@ -317,22 +303,20 @@ class App:
         with objc.autorelease_pool():
             # create the app
             NSApplication.sharedApplication()
-            NSApp.setActivationPolicy_(NSApplicationActivationPolicyRegular)
+            NSApp.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
 
             # create the menu bar and attach it to the app
-            menubar = NSMenu.alloc().init().autorelease()
-            app_menu_item = NSMenuItem.alloc().init().autorelease()
+            menubar = NSMenu.alloc().init()
+            app_menu_item = NSMenuItem.alloc().init()
             menubar.addItem_(app_menu_item)
             NSApp.setMainMenu_(menubar)
-            app_menu = NSMenu.alloc().init().autorelease()
+            app_menu = NSMenu.alloc().init()
 
             # add a menu item to the menu to quit the app
             app_name = NSProcessInfo.processInfo().processName()
             quit_title = f"Quit {app_name}"
-            quit_menu_item = (
-                NSMenuItem.alloc()
-                .initWithTitle_action_keyEquivalent_(quit_title, "terminate:", "q")
-                .autorelease()
+            quit_menu_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                quit_title, "terminate:", "q"
             )
             app_menu.addItem_(quit_menu_item)
             app_menu_item.setSubmenu_(app_menu)
