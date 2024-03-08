@@ -1,6 +1,5 @@
 """Toolkit to help create a native macOS GUI with AppKit"""
 
-
 from __future__ import annotations
 
 import os
@@ -13,11 +12,13 @@ from AppKit import (
     NSButton,
     NSComboBox,
     NSImageView,
+    NSScrollView,
     NSStackView,
     NSTextField,
+    NSTextView,
     NSView,
 )
-from Foundation import NSURL, NSMakeRect, NSObject
+from Foundation import NSURL, NSMakeRect, NSMakeSize, NSObject
 from objc import objc_method, python_method, super
 
 # constants
@@ -54,31 +55,134 @@ class StackView(NSStackView):
         self.removeArrangedSubview_(view)
 
 
+# def scrollViewScrollHeight(sv, scrollVal):
+#     sv.contentView().scrollToPoint_((0, scrollVal))
+#     sv.reflectScrolledClipView_(sv.contentView())
+
+
+class ScrolledStackView(NSScrollView):
+    """A scrollable stack view; use self.documentView() or self.stack to access the stack view"""
+
+    def initWithStack_(
+        self,
+        stack: NSStackView | StackView,
+        vscroll: bool = False,
+        hscroll: bool = False,
+    ):
+        self = super().init()
+        if not self:
+            return
+
+        self.stack: NSStackView | StackView = stack
+        self.setHasVerticalScroller_(vscroll)
+        self.setHasHorizontalScroller_(hscroll)
+        self.setBorderType_(AppKit.NSNoBorder)
+        self.setTranslatesAutoresizingMaskIntoConstraints_(False)
+        self.setDrawsBackground_(False)
+        self.setAutohidesScrollers_(True)
+
+        # frame = ((0, 0), (1000,  1000))
+        # self.ns_inner = NSTextView.alloc().initWithFrame_(frame)
+        # self.setDocumentView_(self.ns_inner)
+        self.setDocumentView_(self.stack)
+
+        # self.updateScrollBar_(self.stack.frame().size[1] - 200)
+        # constrain_to_parent_width(self.stack, self)
+        return self
+
+    # def updateScrollBar_(self, scrollVal):
+    #     return scrollViewScrollHeight(self, scrollVal)
+
+    @python_method
+    def append(self, view: NSView):
+        """Add view to stack"""
+        # self.stack.addArrangedSubview_(view)
+        self.documentView().addArrangedSubview_(view)
+
+    @python_method
+    def extend(self, views: Iterable[NSView]):
+        """Extend stack with the contents of views"""
+        for view in views:
+            self.documentView().append(view)
+
+    @python_method
+    def insert(self, i: int, view: NSView):
+        """Insert view at index i"""
+        self.documentView().insertArrangedSubview_atIndex_(view, i)
+
+    @python_method
+    def remove(self, view: NSView):
+        """Remove view from the stack"""
+        self.documentView().removeArrangedSubview_(view)
+
+    def setSpacing_(self, spacing):
+        self.stack.setSpacing_(spacing)
+
+    def setOrientation_(self, orientation):
+        self.stack.setOrientation_(orientation)
+
+    def setDistribution_(self, distribution):
+        self.stack.setDistribution_(distribution)
+
+    def setAlignment_(self, alignment):
+        self.stack.setAlignment_(alignment)
+
+    def setEdgeInsets_(self, edge_inset):
+        self.stack.setEdgeInsets_(edge_inset)
+
+
 # helper functions to create AppKit objects
 def hstack(
-    align: int = AppKit.NSLayoutAttributeCenterY, distribute: int | None = None
+    align: int = AppKit.NSLayoutAttributeCenterY,
+    distribute: int | None = None,
+    vscroll: bool = False,
+    hscroll: bool = False,
+    views: (
+        Iterable[AppKit.NSView] | AppKit.NSArray | AppKit.NSMutableArray | None
+    ) = None,
 ) -> StackView:
     """Create a horizontal StackView"""
     distribute = None
-    hstack = StackView.stackViewWithViews_(None)
+    hstack = StackView.stackViewWithViews_(views)
     hstack.setSpacing_(PADDING)
     hstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationHorizontal)
     if distribute is not None:
         hstack.setDistribution_(distribute)
     hstack.setAlignment_(align)
+    hstack.setTranslatesAutoresizingMaskIntoConstraints_(False)
+    hstack.setHuggingPriority_forOrientation_(
+        AppKit.NSLayoutPriorityDefaultHigh,
+        AppKit.NSLayoutConstraintOrientationHorizontal,
+    )
+    if vscroll or hscroll:
+        scroll_view = ScrolledStackView.alloc().initWithStack_(hstack, vscroll, hscroll)
+        return scroll_view
     return hstack
 
 
 def vstack(
-    align: int = AppKit.NSLayoutAttributeLeft, distribute: int | None = None
-) -> StackView:
+    align: int = AppKit.NSLayoutAttributeLeft,
+    distribute: int | None = None,
+    vscroll: bool = False,
+    hscroll: bool = False,
+    views: AppKit.NSArray | AppKit.NSMutableArray | None = None,
+) -> StackView | ScrolledStackView:
     """Create a vertical StackView"""
-    vstack = StackView.stackViewWithViews_(None)
+    vstack = StackView.stackViewWithViews_(views)
     vstack.setSpacing_(PADDING)
     vstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
     if distribute is not None:
         vstack.setDistribution_(distribute)
     vstack.setAlignment_(align)
+    vstack.setTranslatesAutoresizingMaskIntoConstraints_(False)
+    # TODO: set priority as arg? or let user set it later?
+    vstack.setHuggingPriority_forOrientation_(
+        AppKit.NSLayoutPriorityDefaultHigh,
+        AppKit.NSLayoutConstraintOrientationVertical,
+    )
+    if vscroll or hscroll:
+        scroll_view = ScrolledStackView.alloc().initWithStack_(vstack, vscroll, hscroll)
+        return scroll_view
     return vstack
 
 
@@ -120,7 +224,6 @@ class LinkLabel(NSTextField):
         self.addCursorRect_cursor_(self.bounds(), AppKit.NSCursor.pointingHandCursor())
 
     def mouseDown_(self, event):
-        print("mouseDown:", event)
         AppKit.NSWorkspace.sharedWorkspace().openURL_(self.url)
 
     def mouseEntered_(self, event):
@@ -275,17 +378,54 @@ def hseparator() -> NSBox:
 
 
 def image_view(
-    path: str | os.PathLike, width: int | None = None, height: int | None = None
+    path: str | os.PathLike,
+    width: int | None = None,
+    height: int | None = None,
+    scale: int = AppKit.NSImageScaleProportionallyUpOrDown,
+    align: int = AppKit.NSImageAlignCenter,
 ) -> NSImageView:
-    """Create an image from a file"""
+    """Create an image view from a an image file.
+
+    Args:
+        path: path to the image file
+        width: width to constrain the image to; if None, the image will not be constrained
+        height: height to constrain the image to; if None, the image will not be constrained
+        scale: scaling mode for the image
+        align: alignment mode for the image
+
+    Returns: NSImageView
+
+    Note: if only one of width or height set, the other will be scaled to maintain aspect ratio.
+    If image is smaller than the specified width or height and scale is set to AppKit.NSImageScaleNone,
+    the image frame will be larger than the image and the image will be aligned according to align.
+    """
     image = AppKit.NSImage.alloc().initByReferencingFile_(str(path))
     image_view = NSImageView.imageViewWithImage_(image)
-    image_view.setImageScaling_(AppKit.NSImageScaleProportionallyUpOrDown)
-    image_view.setImageAlignment_(AppKit.NSImageAlignTopLeft)
+    image_view.setImageScaling_(scale)
+    image_view.setImageAlignment_(align)
+    image_view.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
+    # if width or height set, constrain to that size
+    # if only one of width or height is set, constrain to that size and scale the other to maintain aspect ratio
+    # if this is not done, the NSImageView intrinsic size may be larger than the window and thus disrupt the layout
+
     if width:
         image_view.widthAnchor().constraintEqualToConstant_(width).setActive_(True)
+        if not height:
+            aspect_ratio = image.size().width / image.size().height
+            scaled_height = width / aspect_ratio
+            image_view.heightAnchor().constraintEqualToConstant_(
+                scaled_height
+            ).setActive_(True)
     if height:
         image_view.heightAnchor().constraintEqualToConstant_(height).setActive_(True)
+        if not width:
+            aspect_ratio = image.size().width / image.size().height
+            scaled_width = height * aspect_ratio
+            image_view.widthAnchor().constraintEqualToConstant_(
+                scaled_width
+            ).setActive_(True)
+
     return image_view
 
 
@@ -367,6 +507,77 @@ def constrain_stacks_side_by_side(
         )
 
 
+def constrain_stacks_top_to_bottom(
+    *stacks: NSStackView,
+    weights: list[float] | None = None,
+    parent: NSStackView | None = None,
+    padding: int = 0,
+    edge_inset: int = 0,
+):
+    """Constrain a list of NSStackViews to be top to bottom optionally using weighted widths
+
+    Args:
+        *stacks: NSStackViews to constrain
+        weights: optional weights to use for each stack
+        parent: NSStackView to constrain the stacks to; if None, uses stacks[0].superview()
+        padding: padding between stacks
+        edge_inset: padding between stacks and parent
+
+
+    Note:
+        If weights are provided, the stacks will be constrained to be top to bottom with
+        widths proportional to the weights. For example, if 2 stacks are provided with
+        weights = [1, 2], the first stack will be half the width of the second stack.
+    """
+
+    if len(stacks) < 2:
+        raise ValueError("Must provide at least two stacks")
+
+    parent = parent or stacks[0].superview()
+
+    if weights is not None:
+        min_weight, min_index = min_with_index(weights)
+    else:
+        min_weight, min_index = 1.0, 0
+
+    for i, stack in enumerate(stacks):
+        if i == 0:
+            stack.topAnchor().constraintEqualToAnchor_constant_(
+                parent.topAnchor(), edge_inset
+            ).setActive_(True)
+        else:
+            stack.topAnchor().constraintEqualToAnchor_constant_(
+                stacks[i - 1].bottomAnchor(), padding
+            ).setActive_(True)
+        if i == len(stacks) - 1:
+            stack.bottomAnchor().constraintEqualToAnchor_constant_(
+                parent.bottomAnchor(), -edge_inset
+            ).setActive_(True)
+        stack.leadingAnchor().constraintEqualToAnchor_constant_(
+            parent.leadingAnchor(), edge_inset
+        ).setActive_(True)
+        stack.trailingAnchor().constraintEqualToAnchor_constant_(
+            parent.trailingAnchor(), -edge_inset
+        ).setActive_(True)
+
+        if not weights:
+            continue
+
+        weight = weights[i] / min_weight
+
+        AppKit.NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+            stack,
+            AppKit.NSLayoutAttributeHeight,
+            AppKit.NSLayoutRelationEqual,
+            stacks[min_index],
+            AppKit.NSLayoutAttributeHeight,
+            weight,
+            0.0,
+        ).setActive_(
+            True
+        )
+
+
 def constrain_to_parent_width(
     view: NSView, parent: NSView | None = None, edge_inset: int = 0
 ):
@@ -395,3 +606,40 @@ def constrain_to_width(view: NSView, width: float | None = None):
     """
     if width is not None:
         view.widthAnchor().constraintEqualToConstant_(width).setActive_(True)
+
+
+def constrain_to_height(view: NSView, height: float | None = None):
+    """Constrain an NSView to a fixed height
+
+    Args:
+        view: NSView to constrain
+        height: height to constrain to; if None, does not apply a height constraint
+    """
+    if height is not None:
+        view.heightAnchor().constraintEqualToConstant_(height).setActive_(True)
+
+
+def constrain_center_x_to_parent(view: NSView, parent: NSView | None = None):
+    """Constrain an NSView to the center of its parent along the x-axis
+
+    Args:
+        view: NSView to constrain
+        parent: NSView to constrain the control to; if None, uses view.superview()
+    """
+    parent = parent or view.superview()
+    view.centerXAnchor().constraintEqualToAnchor_(parent.centerXAnchor()).setActive_(
+        True
+    )
+
+
+def constrain_center_y_to_parent(view: NSView, parent: NSView | None = None):
+    """Constrain an NSView to the center of its parent along the y-axis
+
+    Args:
+        view: NSView to constrain
+        parent: NSView to constrain the control to; if None, uses view.superview()
+    """
+    parent = parent or view.superview()
+    view.centerYAnchor().constraintEqualToAnchor_(parent.centerYAnchor()).setActive_(
+        True
+    )

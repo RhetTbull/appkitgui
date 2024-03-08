@@ -20,7 +20,7 @@ from AppKit import (
     NSStackView,
     NSWindow,
 )
-from Foundation import NSMakeRect
+from Foundation import NSMakeRect, NSMutableArray
 from objc import objc_method, python_method
 
 from appkitgui import (
@@ -29,7 +29,10 @@ from appkitgui import (
     checkbox,
     combo_box,
     constrain_stacks_side_by_side,
+    constrain_stacks_top_to_bottom,
+    constrain_to_height,
     constrain_to_parent_width,
+    constrain_to_width,
     hseparator,
     hstack,
     image_view,
@@ -83,10 +86,6 @@ class DemoWindow(NSObject):
             main_view.superview().topAnchor()
         )
         top_constraint.setActive_(True)
-        # bottom_constraint = main_view.bottomAnchor().constraintEqualToAnchor_(
-        #     main_view.superview().bottomAnchor()
-        # )
-        # bottom_constraint.setActive_(True)
         left_constraint = main_view.leftAnchor().constraintEqualToAnchor_(
             main_view.superview().leftAnchor()
         )
@@ -99,6 +98,9 @@ class DemoWindow(NSObject):
 
     def show(self):
         """Create and show the window"""
+
+        # TODO: This is a mess... I need to clean this up
+
         with objc.autorelease_pool():
             # create the window
             self.window = self.create_window()
@@ -183,26 +185,35 @@ class DemoWindow(NSObject):
             # add an image
             self.hstack3 = hstack()
             self.main_view.append(self.hstack3)
-            self.image = image_view("image.jpeg", width=200)
+            self.image = image_view(
+                "image.jpeg", width=150, align=AppKit.NSImageAlignCenter
+            )
             self.hstack3.append(self.image)
 
-            # add a vertical stack to hold buttons
+            # # add a vertical stack to hold buttons
             self.vstack3 = vstack()
             self.hstack3.append(self.vstack3)
             self.button_add = button("Add", self, self.button_add_to_stack)
             self.button_remove = button("Remove", self, self.button_remove_from_stack)
-            self.vstack3.extend([self.button_add, self.button_remove])
+            self.button_array = NSMutableArray.alloc().init()
+            self.button_list = []
+            self.label_stack = label(
+                "Click Add / Remove to\nadd or remove items\nfrom the stack."
+            )
+            self.vstack3.extend([self.button_add, self.label_stack, self.button_remove])
 
-            # add a vertical stack to hold controls added/removed
-            self.vstack4 = vstack()
+            self.vstack4 = vstack(vscroll=True)
             self.hstack3.append(self.vstack4)
 
-            # for reasons I haven't figured out, the NSImageView renders on top of
-            # the vertical stack, hiding the buttons
-            # to fix this, add constraints so the image and stack are side by side
-            constrain_stacks_side_by_side(
-                self.image, self.vstack3, self.vstack4, padding=PADDING * 2
-            )
+            self.hsep2 = hseparator()
+            self.main_view.append(self.hsep2)
+
+            self.label_array = NSMutableArray.alloc().init()
+            for x in range(10):
+                self.label_array.append(label(f"Label {x}"))
+            self.hstack4 = hstack(hscroll=True, views=self.label_array)
+            constrain_to_height(self.hstack4, 100)
+            self.main_view.append(self.hstack4)
 
             # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
@@ -262,23 +273,25 @@ class DemoWindow(NSObject):
 
     @objc_method(selector=b"buttonAddToStack:")
     def button_add_to_stack(self, sender):
-        if not getattr(self, "label_stack", None):
-            self.label_stack = []
+        # _label_stack_list is a list to keep a reference to the labels
+        if not getattr(self, "_label_stack_list", None):
+            self._label_stack_list = []
 
-        i = len(self.label_stack)
+        i = len(self._label_stack_list)
         new_label = label(f"Item {i}")
 
         # keep a reference to the label
-        self.label_stack.append(new_label)
+        self._label_stack_list.append(new_label)
 
         # add it to the stack view
         self.vstack4.append(new_label)
 
     @objc_method(selector=b"buttonRemoveFromStack:")
     def button_remove_from_stack(self, sender):
-        if not getattr(self, "label_stack", None):
+        # _label_stack_list is a list to keep a reference to the labels
+        if not getattr(self, "_label_stack_list", None):
             return
-        label_to_remove = self.label_stack.pop()
+        label_to_remove = self._label_stack_list.pop()
         label_to_remove.setHidden_(True)
         self.vstack4.removeArrangedSubview_(label_to_remove)
         label_to_remove.removeFromSuperview()
