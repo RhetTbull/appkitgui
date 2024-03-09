@@ -33,11 +33,13 @@ from appkitgui import (
     constrain_to_height,
     constrain_to_parent_width,
     constrain_to_width,
+    date_picker,
     hseparator,
     hstack,
     image_view,
     label,
     link,
+    nsdate_to_datetime_date,
     radio_button,
     vstack,
 )
@@ -212,8 +214,21 @@ class DemoWindow(NSObject):
             for x in range(10):
                 self.label_array.append(label(f"Label {x}"))
             self.hstack4 = hstack(hscroll=True, views=self.label_array)
-            constrain_to_height(self.hstack4, 100)
+            constrain_to_height(self.hstack4, 50)
             self.main_view.append(self.hstack4)
+
+            self.hsep3 = hseparator()
+            self.main_view.append(self.hsep3)
+
+            self.hstack5 = hstack(align=AppKit.NSLayoutAttributeTop)
+            self.main_view.append(self.hstack5)
+            self.date_picker = date_picker(target=self, action="datePickerAction:")
+            self.hstack5.append(self.date_picker)
+
+            self.label_date = label(
+                f"Date: {self.date_picker.dateValue().strftime('%Y-%m-%d')}"
+            )
+            self.hstack5.append(self.label_date)
 
             # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
@@ -248,6 +263,15 @@ class DemoWindow(NSObject):
         """Handle combo box return"""
         # This gets called when user hits return in the combo box
         print("Combo box edited: ", sender.stringValue())
+
+    def datePickerAction_(self, sender):
+        """Handle date picker change"""
+        # This gets called when the user changes the date in the date picker
+        # Normally, PyObjC handles the conversion of NSDate to datetime.date
+        # However, when a function is called directly from objc, the conversion
+        # must be done manually
+        date = nsdate_to_datetime_date(sender.dateValue())
+        self.label_date.setStringValue_(f"Date: {date.strftime('%Y-%m-%d')}")
 
     def openWindow_(self, sender):
         print("openWindow")

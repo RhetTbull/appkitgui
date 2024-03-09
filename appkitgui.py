@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import os
 from collections.abc import Iterable
 from typing import Callable
@@ -11,6 +12,7 @@ from AppKit import (
     NSBox,
     NSButton,
     NSComboBox,
+    NSDatePicker,
     NSImageView,
     NSScrollView,
     NSStackView,
@@ -18,7 +20,7 @@ from AppKit import (
     NSTextView,
     NSView,
 )
-from Foundation import NSURL, NSMakeRect, NSMakeSize, NSObject
+from Foundation import NSURL, NSDate, NSMakeRect, NSMakeSize, NSObject
 from objc import objc_method, python_method, super
 
 # constants
@@ -429,11 +431,63 @@ def image_view(
     return image_view
 
 
+def date_picker(
+    style: int = AppKit.NSDatePickerStyleClockAndCalendar,
+    elements: int = AppKit.NSDatePickerElementFlagYearMonthDay,
+    mode: int = AppKit.NSDatePickerStyleClockAndCalendar,
+    date: datetime.date | None = None,
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+) -> NSDatePicker:
+    """Create a date picker
+
+    Args:
+        style: style of the date picker, an AppKit.NSDatePickerStyle
+        elements: elements to display in the date picker, an AppKit.NSDatePickerElementFlag
+        mode: mode of the date picker, an AppKit.NSDatePickerMode
+        date: initial date of the date picker; if None, defaults to the current date
+        target: target to send action to
+        action: action to send when the date is changed
+
+    Returns: NSDatePicker
+
+    Raises:
+        ValueError: if only one of target or action is provided
+
+    Note: If target and action are provided, the date picker will send the action to the target.
+    If one of target or action is provided, the other must also be provided.
+    """
+    if (target and not action) or (action and not target):
+        raise ValueError("Both target and action must be provided")
+
+    date = date or datetime.date.today()
+    date_picker = NSDatePicker.alloc().initWithFrame_(NSMakeRect(0, 0, 200, 50))
+    date_picker.setDatePickerStyle_(style)
+    date_picker.setDatePickerElements_(elements)
+    date_picker.setDatePickerMode_(mode)
+    date_picker.setDateValue_(date)
+    date_picker.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
+    if target and action:
+        date_picker.setTarget_(target)
+        date_picker.setAction_(action)
+
+    return date_picker
+
+
 def min_with_index(values: list[float]) -> tuple[int, int]:
     """Return the minimum value and index of the minimum value in a list"""
     min_value = min(values)
     min_index = values.index(min_value)
     return min_value, min_index
+
+
+def nsdate_to_datetime_date(nsdate: NSDate) -> datetime.date:
+    """Convert an NSDate to a datetime.date"""
+    # NSDate's reference date is 2001-01-01 00:00:00 +0000
+    reference_date = datetime.date(2001, 1, 1)
+    delta = datetime.timedelta(seconds=nsdate.timeIntervalSinceReferenceDate())
+    return reference_date + delta
 
 
 def constrain_stacks_side_by_side(
