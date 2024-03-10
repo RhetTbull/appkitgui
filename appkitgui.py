@@ -20,7 +20,7 @@ from AppKit import (
     NSTextView,
     NSView,
 )
-from Foundation import NSURL, NSDate, NSMakeRect, NSMakeSize, NSObject
+from Foundation import NSURL, NSDate, NSMakeRect, NSObject
 from objc import objc_method, python_method, super
 
 # constants
@@ -434,8 +434,8 @@ def image_view(
 def date_picker(
     style: int = AppKit.NSDatePickerStyleClockAndCalendar,
     elements: int = AppKit.NSDatePickerElementFlagYearMonthDay,
-    mode: int = AppKit.NSDatePickerStyleClockAndCalendar,
-    date: datetime.date | None = None,
+    mode: int = AppKit.NSDatePickerModeSingle,
+    date: datetime.date | datetime.datetime | None = None,
     target: NSObject | None = None,
     action: Callable | str | None = None,
     size: tuple[int, int] = (200, 50),
@@ -475,6 +475,49 @@ def date_picker(
         date_picker.setAction_(action)
 
     return date_picker
+
+
+def time_picker(
+    style: int = AppKit.NSDatePickerStyleTextFieldAndStepper,
+    elements: int = AppKit.NSDatePickerElementFlagHourMinute,
+    mode: int = AppKit.NSDatePickerModeSingle,
+    time: datetime.datetime | datetime.time | None = None,
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+) -> NSDatePicker:
+    """Create a time picker
+
+    Args:
+        style: style of the date picker, an AppKit.NSDatePickerStyle
+        elements: elements to display in the date picker, an AppKit.NSDatePickerElementFlag
+        mode: mode of the date picker, an AppKit.NSDatePickerMode
+        time: initial time of the date picker; if None, defaults to the current time
+        target: target to send action to
+        action: action to send when the date is changed
+
+    Returns: NSDatePicker
+
+    Raises:
+        ValueError: if only one of target or action is provided
+
+    Note: If target and action are provided, the time picker will send the action to the target.
+    If one of target or action is provided, the other must also be provided.
+    This function is a wrapper around date_picker, with the date picker style set to
+    display a time picker.
+    """
+    # if time is only a time, convert to datetime with today's date
+    # as the date picker requires a datetime or date
+    if isinstance(time, datetime.time):
+        time = datetime.datetime.combine(datetime.date.today(), time)
+    time = time or datetime.datetime.now()
+    return date_picker(
+        style=style,
+        elements=elements,
+        mode=mode,
+        date=time,
+        target=target,
+        action=action,
+    )
 
 
 def min_with_index(values: list[float]) -> tuple[int, int]:

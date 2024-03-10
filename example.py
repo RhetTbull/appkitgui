@@ -41,8 +41,10 @@ from appkitgui import (
     link,
     nsdate_to_datetime_date,
     radio_button,
+    time_picker,
     vstack,
 )
+import datetime
 
 # constants
 EDGE_INSET = 20
@@ -229,6 +231,9 @@ class DemoWindow(NSObject):
                 f"Date: {self.date_picker.dateValue().strftime('%Y-%m-%d')}"
             )
             self.hstack5.append(self.label_date)
+
+            self.time_picker = time_picker(time=datetime.time(8, 0, 0))
+            self.hstack5.append(self.time_picker)
 
             # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
