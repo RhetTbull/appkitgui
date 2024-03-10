@@ -438,6 +438,7 @@ def date_picker(
     date: datetime.date | None = None,
     target: NSObject | None = None,
     action: Callable | str | None = None,
+    size: tuple[int, int] = (200, 50),
 ) -> NSDatePicker:
     """Create a date picker
 
@@ -448,6 +449,7 @@ def date_picker(
         date: initial date of the date picker; if None, defaults to the current date
         target: target to send action to
         action: action to send when the date is changed
+        size: size of the date picker
 
     Returns: NSDatePicker
 
@@ -461,7 +463,7 @@ def date_picker(
         raise ValueError("Both target and action must be provided")
 
     date = date or datetime.date.today()
-    date_picker = NSDatePicker.alloc().initWithFrame_(NSMakeRect(0, 0, 200, 50))
+    date_picker = NSDatePicker.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
     date_picker.setDatePickerStyle_(style)
     date_picker.setDatePickerElements_(elements)
     date_picker.setDatePickerMode_(mode)
