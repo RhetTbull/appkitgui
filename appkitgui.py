@@ -1,4 +1,7 @@
-"""Toolkit to help create a native macOS GUI with AppKit"""
+"""Toolkit to help create a native macOS GUI with AppKit
+
+Copyright (c) 2023, Rhet Turnbull; licensed under MIT License.
+"""
 
 from __future__ import annotations
 
@@ -25,13 +28,20 @@ from AppKit import (
 from Foundation import NSURL, NSDate, NSMakeRect, NSObject
 from objc import objc_method, python_method, super
 
-# constants
+################################################################################
+# Constants
+################################################################################
 
 # margin between window edge and content
 EDGE_INSET = 20
 
 # padding between elements
 PADDING = 8
+
+
+################################################################################
+# Custom views and control classes
+################################################################################
 
 
 class StackView(NSStackView):
@@ -59,11 +69,6 @@ class StackView(NSStackView):
         self.removeArrangedSubview_(view)
 
 
-# def scrollViewScrollHeight(sv, scrollVal):
-#     sv.contentView().scrollToPoint_((0, scrollVal))
-#     sv.reflectScrolledClipView_(sv.contentView())
-
-
 class ScrolledStackView(NSScrollView):
     """A scrollable stack view; use self.documentView() or self.stack to access the stack view"""
 
@@ -85,22 +90,13 @@ class ScrolledStackView(NSScrollView):
         self.setDrawsBackground_(False)
         self.setAutohidesScrollers_(True)
 
-        # frame = ((0, 0), (1000,  1000))
-        # self.ns_inner = NSTextView.alloc().initWithFrame_(frame)
-        # self.setDocumentView_(self.ns_inner)
         self.setDocumentView_(self.stack)
 
-        # self.updateScrollBar_(self.stack.frame().size[1] - 200)
-        # constrain_to_parent_width(self.stack, self)
         return self
-
-    # def updateScrollBar_(self, scrollVal):
-    #     return scrollViewScrollHeight(self, scrollVal)
 
     @python_method
     def append(self, view: NSView):
         """Add view to stack"""
-        # self.stack.addArrangedSubview_(view)
         self.documentView().addArrangedSubview_(view)
 
     @python_method
@@ -135,7 +131,103 @@ class ScrolledStackView(NSScrollView):
         self.stack.setEdgeInsets_(edge_inset)
 
 
-# helper functions to create AppKit objects
+class LinkLabel(NSTextField):
+    """Uneditable text field that displays a clickable link"""
+
+    def initWithText_URL_(self, text: str, url: str):
+        self = super().init()
+
+        if not self:
+            return
+
+        attr_str = self.attributedStringWithLinkToURL_text_(url, text)
+        self.setAttributedStringValue_(attr_str)
+        self.url = NSURL.URLWithString_(url)
+        self.setBordered_(False)
+        self.setSelectable_(False)
+        self.setEditable_(False)
+        self.setBezeled_(False)
+        self.setDrawsBackground_(False)
+
+        return self
+
+    def resetCursorRects(self):
+        self.addCursorRect_cursor_(self.bounds(), AppKit.NSCursor.pointingHandCursor())
+
+    def mouseDown_(self, event):
+        AppKit.NSWorkspace.sharedWorkspace().openURL_(self.url)
+
+    def mouseEntered_(self, event):
+        AppKit.NSCursor.pointingHandCursor().push()
+
+    def mouseExited_(self, event):
+        AppKit.NSCursor.pop()
+
+    def attributedStringWithLinkToURL_text_(self, url: str, text: str):
+        linkAttributes = {
+            AppKit.NSLinkAttributeName: NSURL.URLWithString_(url),
+            AppKit.NSUnderlineStyleAttributeName: AppKit.NSUnderlineStyleSingle,
+            AppKit.NSForegroundColorAttributeName: AppKit.NSColor.linkColor(),
+            # AppKit.NSCursorAttributeName: AppKit.NSCursor.pointingHandCursor(),
+        }
+        return AppKit.NSAttributedString.alloc().initWithString_attributes_(
+            text, linkAttributes
+        )
+
+
+class ComboBoxDelegate(NSObject):
+    """Helper class to handle combo box events"""
+
+    def initWithTarget_Action_(self, target: NSObject, action: Callable | str | None):
+        self = super().init()
+        if not self:
+            return
+
+        self.target = target
+        self.action_change = action
+        return self
+
+    @objc_method
+    def comboBoxSelectionDidChange_(self, notification):
+        if self.action_change:
+            if type(self.action_change) == str:
+                self.target.performSelector_withObject_(
+                    self.action_change, notification.object()
+                )
+            else:
+                self.action_change(notification.object())
+
+    # this is not currently used, handled by action_return
+    # @objc_method
+    # def comboBox_textView_doCommandBySelector_(
+    #     self, combo_box, text_view, command_selector
+    # ):
+    #     if command_selector == b"insertNewline:":
+    #         if self.action_return:
+    #             self.action_return()
+    #         return True
+    #     return False
+
+
+class ComboBox(NSComboBox):
+    """NSComboBox that stores a reference it's delegate
+
+    Note:
+        This is required to maintain a reference to the delegate, otherwise it will
+        not be retained after the ComboBox is created.
+    """
+
+    def setDelegate_(self, delegate: NSObject | None):
+        self.delegate = delegate
+        if delegate is not None:
+            super().setDelegate_(delegate)
+
+
+################################################################################
+# Helper functions to create views and controls
+################################################################################
+
+
 def hstack(
     align: int = AppKit.NSLayoutAttributeCenterY,
     distribute: int | None = None,
@@ -204,50 +296,6 @@ def label(value: str) -> NSTextField:
     return label
 
 
-class LinkLabel(NSTextField):
-    """Uneditable text field that displays a clickable link"""
-
-    def initWithText_URL_(self, text: str, url: str):
-        self = super().init()
-
-        if not self:
-            return
-
-        attr_str = self.attributedStringWithLinkToURL_text_(url, text)
-        self.setAttributedStringValue_(attr_str)
-        self.url = NSURL.URLWithString_(url)
-        self.setBordered_(False)
-        self.setSelectable_(False)
-        self.setEditable_(False)
-        self.setBezeled_(False)
-        self.setDrawsBackground_(False)
-
-        return self
-
-    def resetCursorRects(self):
-        self.addCursorRect_cursor_(self.bounds(), AppKit.NSCursor.pointingHandCursor())
-
-    def mouseDown_(self, event):
-        AppKit.NSWorkspace.sharedWorkspace().openURL_(self.url)
-
-    def mouseEntered_(self, event):
-        AppKit.NSCursor.pointingHandCursor().push()
-
-    def mouseExited_(self, event):
-        AppKit.NSCursor.pop()
-
-    def attributedStringWithLinkToURL_text_(self, url: str, text: str):
-        linkAttributes = {
-            AppKit.NSLinkAttributeName: NSURL.URLWithString_(url),
-            AppKit.NSUnderlineStyleAttributeName: AppKit.NSUnderlineStyleSingle,
-            AppKit.NSForegroundColorAttributeName: AppKit.NSColor.linkColor(),
-            # AppKit.NSCursorAttributeName: AppKit.NSCursor.pointingHandCursor(),
-        }
-        return AppKit.NSAttributedString.alloc().initWithString_attributes_(
-            text, linkAttributes
-        )
-
-
 def link(text: str, url: str) -> NSTextField:
     """Create a clickable link label"""
     return LinkLabel.alloc().initWithText_URL_(text, url)
@@ -273,54 +321,6 @@ def radio_button(
     radio_button = NSButton.buttonWithTitle_target_action_(title, target, action)
     radio_button.setButtonType_(AppKit.NSRadioButton)
     return radio_button
-
-
-class ComboBoxDelegate(NSObject):
-    """Helper class to handle combo box events"""
-
-    def initWithTarget_Action_(self, target: NSObject, action: Callable | str | None):
-        self = super().init()
-        if not self:
-            return
-
-        self.target = target
-        self.action_change = action
-        return self
-
-    @objc_method
-    def comboBoxSelectionDidChange_(self, notification):
-        if self.action_change:
-            if type(self.action_change) == str:
-                self.target.performSelector_withObject_(
-                    self.action_change, notification.object()
-                )
-            else:
-                self.action_change(notification.object())
-
-    # this is not currently used, handled by action_return
-    # @objc_method
-    # def comboBox_textView_doCommandBySelector_(
-    #     self, combo_box, text_view, command_selector
-    # ):
-    #     if command_selector == b"insertNewline:":
-    #         if self.action_return:
-    #             self.action_return()
-    #         return True
-    #     return False
-
-
-class ComboBox(NSComboBox):
-    """NSComboBox that stores a reference it's delegate
-
-    Note:
-        This is required to maintain a reference to the delegate, otherwise it will
-        not be retained after the ComboBox is created.
-    """
-
-    def setDelegate_(self, delegate: NSObject | None):
-        self.delegate = delegate
-        if delegate is not None:
-            super().setDelegate_(delegate)
 
 
 def combo_box(
@@ -523,6 +523,15 @@ def time_picker(
     )
 
 
+################################################################################
+# Menus
+################################################################################
+
+################################################################################
+# Utility Functions
+################################################################################
+
+
 def min_with_index(values: list[float]) -> tuple[int, int]:
     """Return the minimum value and index of the minimum value in a list"""
     min_value = min(values)
@@ -553,6 +562,11 @@ def nsdate_to_datetime(nsdate: NSDate):
 
     dt = dt.astimezone(tz=tz)
     return dt.replace(tzinfo=None)
+
+
+################################################################################
+# Constraint helper functions
+################################################################################
 
 
 def constrain_stacks_side_by_side(
