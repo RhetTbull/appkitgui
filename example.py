@@ -5,6 +5,8 @@ This makes use of the appkitgui toolkit which simplifies widget creation and lay
 
 from __future__ import annotations
 
+import datetime
+
 import AppKit
 import objc
 from AppKit import (
@@ -39,12 +41,11 @@ from appkitgui import (
     image_view,
     label,
     link,
-    nsdate_to_datetime_date,
+    nsdate_to_datetime,
     radio_button,
     time_picker,
     vstack,
 )
-import datetime
 
 # constants
 EDGE_INSET = 20
@@ -232,7 +233,9 @@ class DemoWindow(NSObject):
             )
             self.hstack5.append(self.label_date)
 
-            self.time_picker = time_picker(time=datetime.time(8, 0, 0))
+            self.time_picker = time_picker(
+                time=datetime.time(8, 0, 0), target=self, action="timePickerAction:"
+            )
             self.hstack5.append(self.time_picker)
 
             # finish setting up the window
@@ -275,8 +278,17 @@ class DemoWindow(NSObject):
         # Normally, PyObjC handles the conversion of NSDate to datetime.date
         # However, when a function is called directly from objc, the conversion
         # must be done manually
-        date = nsdate_to_datetime_date(sender.dateValue())
+        date = nsdate_to_datetime(sender.dateValue()).date()
         self.label_date.setStringValue_(f"Date: {date.strftime('%Y-%m-%d')}")
+
+    def timePickerAction_(self, sender):
+        """Handle time picker change"""
+        # This gets called when the user changes the date in the date picker
+        # Normally, PyObjC handles the conversion of NSDate to datetime.date
+        # However, when a function is called directly from objc, the conversion
+        # must be done manually
+        time = nsdate_to_datetime(sender.dateValue()).time()
+        print(f"Time: {time.strftime('%H:%M:%S')}")
 
     def openWindow_(self, sender):
         print("openWindow")

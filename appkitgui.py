@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import zoneinfo
 from collections.abc import Iterable
 from typing import Callable
 
@@ -18,6 +19,7 @@ from AppKit import (
     NSStackView,
     NSTextField,
     NSTextView,
+    NSTimeZone,
     NSView,
 )
 from Foundation import NSURL, NSDate, NSMakeRect, NSObject
@@ -468,6 +470,7 @@ def date_picker(
     date_picker.setDatePickerElements_(elements)
     date_picker.setDatePickerMode_(mode)
     date_picker.setDateValue_(date)
+    date_picker.setTimeZone_(NSTimeZone.localTimeZone())
     date_picker.setTranslatesAutoresizingMaskIntoConstraints_(False)
 
     if target and action:
@@ -527,12 +530,29 @@ def min_with_index(values: list[float]) -> tuple[int, int]:
     return min_value, min_index
 
 
-def nsdate_to_datetime_date(nsdate: NSDate) -> datetime.date:
-    """Convert an NSDate to a datetime.date"""
+def nsdate_to_datetime(nsdate: NSDate):
+    """Convert an NSDate to a datetime in the specified timezone
+
+    Args:
+        nsdate: NSDate to convert
+
+    Returns: naive datetime.datetime
+
+    Note: timezone is the identifier of the timezone to convert to, e.g. "America/New_York" or "US/Eastern"
+    """
     # NSDate's reference date is 2001-01-01 00:00:00 +0000
-    reference_date = datetime.date(2001, 1, 1)
-    delta = datetime.timedelta(seconds=nsdate.timeIntervalSinceReferenceDate())
-    return reference_date + delta
+    reference_date = datetime.datetime(2001, 1, 1, tzinfo=datetime.timezone.utc)
+    seconds_since_ref = nsdate.timeIntervalSinceReferenceDate()
+    dt = reference_date + datetime.timedelta(seconds=seconds_since_ref)
+    # all NSDates are naive; use local timezone to adjust from UTC to local
+    timezone = NSTimeZone.localTimeZone().name()
+    try:
+        tz = zoneinfo.ZoneInfo(timezone)
+    except zoneinfo.ZoneInfoNotFoundError:
+        raise ValueError(f"Invalid timezone: {timezone}")
+
+    dt = dt.astimezone(tz=tz)
+    return dt.replace(tzinfo=None)
 
 
 def constrain_stacks_side_by_side(
