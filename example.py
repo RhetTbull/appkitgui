@@ -373,7 +373,7 @@ class DemoWindow(NSObject):
         # toggle the checkmark (on/off state) for the Bold menu
         state = not sender.state()
         sender.setState_(state)
-        print(f"bold is {'on' if state else 'off'}")
+        print(f"Bold is {'on' if state else 'off'}")
 
 
 class AppDelegate(NSObject):
