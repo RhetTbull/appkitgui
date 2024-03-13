@@ -370,7 +370,10 @@ class DemoWindow(NSObject):
 
     def boldMenuAction_(self, sender):
         """Handle the Edit | Format | Bold menu"""
-        print("Bold!")
+        # toggle the checkmark (on/off state) for the Bold menu
+        state = not sender.state()
+        sender.setState_(state)
+        print(f"bold is {'on' if state else 'off'}")
 
 
 class AppDelegate(NSObject):
