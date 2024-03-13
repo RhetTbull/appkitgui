@@ -111,12 +111,12 @@ class DemoWindow(NSObject):
     def create_menus(self) -> dict:
         menu_dict = {
             "File": [
-                MenuItem("Open", self.openMenuAction_, None, "o"),
-                MenuItem("New", self.newMenuAction_, None, "n"),
+                MenuItem("Open", None, self.openMenuAction_, "o"),
+                MenuItem("New", None, self.newMenuAction_, "n"),
             ],
             "Edit": [
                 MenuItem("Copy", None, None, "c"),  # no target so Copy will be disabled
-                {"Format": [MenuItem("Bold", self.boldMenuAction_, None, "b")]},
+                {"Format": [MenuItem("Bold", None, self.boldMenuAction_, "b")]},
             ],
         }
         return menus_from_dict(menu_dict, self)

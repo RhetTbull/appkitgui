@@ -560,8 +560,8 @@ def menu_with_submenu(
 def menu_item(
     title: str | None,
     parent: AppKit.NSMenu | None = None,
-    action: Callable | str | None = None,
     target: NSObject | None = None,
+    action: Callable | str | None = None,
     key: str | None = None,
 ) -> AppKit.NSMenuItem:
     """Create a menu item and optionally add it to a parent menu"""
@@ -580,8 +580,8 @@ def menu_item(
 @dataclass
 class MenuItem:
     title: str
-    action: Callable | str | None = None
     target: NSObject | None = None
+    action: Callable | str | None = None
     key: str | None = None
 
 
