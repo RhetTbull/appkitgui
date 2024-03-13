@@ -26,6 +26,7 @@ from Foundation import NSMakeRect, NSMutableArray
 from objc import objc_method, python_method
 
 from appkitgui import (
+    MenuItem,
     StackView,
     button,
     checkbox,
@@ -41,6 +42,11 @@ from appkitgui import (
     image_view,
     label,
     link,
+    menu_bar,
+    menu_item,
+    menu_main,
+    menu_with_submenu,
+    menus_from_dict,
     nsdate_to_datetime,
     radio_button,
     time_picker,
@@ -99,7 +105,21 @@ class DemoWindow(NSObject):
             main_view.superview().rightAnchor()
         )
         right_constraint.setActive_(True)
+
         return main_view
+
+    def create_menus(self) -> dict:
+        menu_dict = {
+            "File": [
+                MenuItem("Open", self.openMenuAction_, None, "o"),
+                MenuItem("New", self.newMenuAction_, None, "n"),
+            ],
+            "Edit": [
+                MenuItem("Copy", None, None, "c"),  # no target so Copy will be disabled
+                {"Format": [MenuItem("Bold", self.boldMenuAction_, None, "b")]},
+            ],
+        }
+        return menus_from_dict(menu_dict, self)
 
     def show(self):
         """Create and show the window"""
@@ -110,6 +130,9 @@ class DemoWindow(NSObject):
             # create the window
             self.window = self.create_window()
             self.main_view = self.create_main_view_(self.window)
+
+            self.menus = self.create_menus()
+            print(f"{self.menus=}")
 
             self.label_hello = label("Hello World")
             self.main_view.append(self.label_hello)
@@ -337,6 +360,18 @@ class DemoWindow(NSObject):
         self.vstack4.removeArrangedSubview_(label_to_remove)
         label_to_remove.removeFromSuperview()
 
+    def openMenuAction_(self, sender):
+        """Handle the File > Open menu"""
+        print("Open!")
+
+    def newMenuAction_(self, sender):
+        """Handle the File > New menu"""
+        print("New!")
+
+    def boldMenuAction_(self, sender):
+        """Handle the Edit | Format | Bold menu"""
+        print("Bold!")
+
 
 class AppDelegate(NSObject):
     """Minimalist app delegate."""
@@ -360,20 +395,20 @@ class App:
             NSApp.setActivationPolicy_(AppKit.NSApplicationActivationPolicyRegular)
 
             # create the menu bar and attach it to the app
-            menubar = NSMenu.alloc().init()
-            app_menu_item = NSMenuItem.alloc().init()
-            menubar.addItem_(app_menu_item)
-            NSApp.setMainMenu_(menubar)
-            app_menu = NSMenu.alloc().init()
+            menubar = menu_bar()
 
             # add a menu item to the menu to quit the app
+            # the app's main menu will have the process name
+            # and this does not need to be specified
+            app_menu = menu_with_submenu(None, menubar)
             app_name = NSProcessInfo.processInfo().processName()
-            quit_title = f"Quit {app_name}"
-            quit_menu_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-                quit_title, "terminate:", "q"
+            quit_menu_item = menu_item(
+                title=f"Quit {app_name}",
+                parent=app_menu,
+                action="terminate:",
+                target=None,
+                key="q",
             )
-            app_menu.addItem_(quit_menu_item)
-            app_menu_item.setSubmenu_(app_menu)
 
             # create the delegate and attach it to the app
             delegate = AppDelegate.alloc().init()

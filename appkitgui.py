@@ -9,10 +9,12 @@ import datetime
 import os
 import zoneinfo
 from collections.abc import Iterable
-from typing import Callable
+from dataclasses import dataclass
+from typing import Any, Callable
 
 import AppKit
 from AppKit import (
+    NSApp,
     NSBox,
     NSButton,
     NSComboBox,
@@ -526,6 +528,105 @@ def time_picker(
 ################################################################################
 # Menus
 ################################################################################
+
+
+def menu_bar() -> AppKit.NSMenuItem:
+    """Create the app's menu bar"""
+    menu = menu_with_submenu(None)
+    NSApp.setMainMenu_(menu)
+    return menu
+
+
+def menu_main() -> AppKit.NSMenu:
+    """Return app's main menu"""
+    return NSApp.mainMenu()
+
+
+def menu_with_submenu(
+    title: str | None = None, parent: AppKit.NSMenu | None = None
+) -> AppKit.NSMenu:
+    """Create a menu with a submenu"""
+    if title:
+        menu = AppKit.NSMenu.alloc().initWithTitle_(title)
+    else:
+        menu = AppKit.NSMenu.alloc().init()
+    sub_menu = menu_item(title)
+    sub_menu.setSubmenu_(menu)
+    if parent:
+        parent.addItem_(sub_menu)
+    return menu
+
+
+def menu_item(
+    title: str | None,
+    parent: AppKit.NSMenu | None = None,
+    action: Callable | str | None = None,
+    target: NSObject | None = None,
+    key: str | None = None,
+) -> AppKit.NSMenuItem:
+    """Create a menu item and optionally add it to a parent menu"""
+    key = key or ""
+    title = title or ""
+    item = AppKit.NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        title, action, key
+    )
+    if target:
+        item.setTarget_(target)
+    if parent:
+        parent.addItem_(item)
+    return item
+
+
+@dataclass
+class MenuItem:
+    title: str
+    action: Callable | str | None = None
+    target: NSObject | None = None
+    key: str | None = None
+
+
+def menus_from_dict(
+    menus: dict[str, Iterable[MenuItem | dict]],
+    target: NSObject | None = None,
+    parent: AppKit.NSMenu | None = None,
+) -> dict[str, list[AppKit.NSMenu | dict]]:
+    """Create menus from a dict
+
+    Args:
+        menus: dict of
+        target: the default target object for menu items (for example, window class's self)
+        parent: the parent menu; if None, uses the app's top-level menu as parent
+
+    Returns:
+        dict of menus and their children
+
+    Note:
+        target may be specified in the target argument and will be used as the default target for all menu items
+        unless the menu item specifies a different target in the MenuItem.target field.
+        .When calling this from your app, leave parent = None to add the menu items to the app's top-level menu
+    """
+    top_level_menus = {}
+    parent = parent or menu_main()
+    for title, value in menus.items():
+        top_menu = menu_with_submenu(title, parent)
+        top_level_menus[title] = [top_menu]
+        if isinstance(value, Iterable):
+            for item in value:
+                if isinstance(item, dict):
+                    top_level_menus[title].append(
+                        menus_from_dict(item, target, top_menu)
+                    )
+                else:
+                    child_item = menu_item(
+                        title=item.title,
+                        parent=top_menu,
+                        action=item.action,
+                        target=item.target or target,
+                        key=item.key,
+                    )
+                    top_level_menus[title].append({item.title: child_item})
+    return top_level_menus
+
 
 ################################################################################
 # Utility Functions
