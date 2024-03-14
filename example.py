@@ -80,7 +80,7 @@ class DemoWindow(NSObject):
         return window
 
     @python_method
-    def create_main_view_(self, window: NSWindow) -> NSStackView:
+    def create_main_view(self, window: NSWindow) -> NSStackView:
         """Create the main NStackView for the app and add it to the window"""
 
         # This uses appkitgui.StackView which is a subclass of NSStackView
@@ -129,7 +129,7 @@ class DemoWindow(NSObject):
         with objc.autorelease_pool():
             # create the window
             self.window = self.create_window()
-            self.main_view = self.create_main_view_(self.window)
+            self.main_view = self.create_main_view(self.window)
 
             self.menus = self.create_menus()
 
