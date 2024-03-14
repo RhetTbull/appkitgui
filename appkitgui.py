@@ -306,6 +306,12 @@ def link(text: str, url: str) -> NSTextField:
 def button(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
     """Create a button"""
     button = NSButton.buttonWithTitle_target_action_(title, target, action)
+    button.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
+    # set hugging priority and compression resistance to prevent button from resizing
+    set_hugging_priority(button)
+    set_compression_resistance(button)
+
     return button
 
 
@@ -668,6 +674,27 @@ def nsdate_to_datetime(nsdate: NSDate):
 ################################################################################
 # Constraint helper functions
 ################################################################################
+
+
+def set_hugging_priority(
+    view: NSView,
+    priority: float = AppKit.NSLayoutPriorityDefaultHigh,
+    orientation: int = AppKit.NSLayoutConstraintOrientationHorizontal,
+):
+    """Set content hugging priority for a view"""
+    view.setContentHuggingPriority_forOrientation_(
+        priority,
+        orientation,
+    )
+
+
+def set_compression_resistance(
+    view: NSView,
+    priority: float = AppKit.NSLayoutPriorityDefaultHigh,
+    orientation: int = AppKit.NSLayoutConstraintOrientationHorizontal,
+):
+    """Set content compression resistance for a view"""
+    view.setContentCompressionResistancePriority_forOrientation_(priority, orientation)
 
 
 def constrain_stacks_side_by_side(

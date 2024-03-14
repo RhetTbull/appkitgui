@@ -132,7 +132,6 @@ class DemoWindow(NSObject):
             self.main_view = self.create_main_view_(self.window)
 
             self.menus = self.create_menus()
-            print(f"{self.menus=}")
 
             self.label_hello = label("Hello World")
             self.main_view.append(self.label_hello)
