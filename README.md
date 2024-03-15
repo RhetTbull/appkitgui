@@ -189,9 +189,10 @@ This project makes use of `NSStackView` to layout the controls in the window and
 
 ```python
 import appkitgui as akg
+import AppKit
 
 window = akg.window("Example", 200, 200)
-main_view = akg.main_view(window)
+main_view = akg.main_view(window, align=AppKit.NSLayoutAttributeCenterX)
 button = akg.button("Choose File")
 main_view.append(button)
 ```
