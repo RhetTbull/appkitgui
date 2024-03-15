@@ -42,6 +42,65 @@ PADDING = 8
 
 
 ################################################################################
+# Window and Application
+################################################################################
+
+
+def window(title: str, size: tuple[int, int] = (600, 600)) -> AppKit.NSWindow:
+    """Create a window with a title and size"""
+    new_window = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
+        NSMakeRect(0, 0, *size),
+        AppKit.NSWindowStyleMaskTitled
+        | AppKit.NSWindowStyleMaskClosable
+        | AppKit.NSWindowStyleMaskResizable,
+        AppKit.NSBackingStoreBuffered,
+        False,
+    )
+    new_window.center()
+    new_window.setTitle_(title)
+    return new_window
+
+
+def main_view(
+    window: AppKit.NSWindow,
+    padding: int = PADDING,
+    edge_insets: tuple[int, int, int, int] = (
+        EDGE_INSET,
+        EDGE_INSET,
+        EDGE_INSET,
+        EDGE_INSET,
+    ),
+    align: int = AppKit.NSLayoutAttributeLeft,
+) -> AppKit.NSView:
+    """Create a main NSStackView for the window which contains all other views"""
+
+    # This uses appkitgui.StackView which is a subclass of NSStackView
+    # that supports some list methods such as append, extend, remove, ...
+    main_view = StackView.stackViewWithViews_(None)
+    main_view.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
+    main_view.setSpacing_(padding)
+    main_view.setEdgeInsets_(edge_insets)
+    main_view.setDistribution_(AppKit.NSStackViewDistributionFill)
+    main_view.setAlignment_(align)
+
+    window.contentView().addSubview_(main_view)
+    top_constraint = main_view.topAnchor().constraintEqualToAnchor_(
+        main_view.superview().topAnchor()
+    )
+    top_constraint.setActive_(True)
+    left_constraint = main_view.leftAnchor().constraintEqualToAnchor_(
+        main_view.superview().leftAnchor()
+    )
+    left_constraint.setActive_(True)
+    right_constraint = main_view.rightAnchor().constraintEqualToAnchor_(
+        main_view.superview().rightAnchor()
+    )
+    right_constraint.setActive_(True)
+
+    return main_view
+
+
+################################################################################
 # Custom views and control classes
 ################################################################################
 

@@ -185,7 +185,18 @@ vstack.addArrangedSubview_(button)
 
 Comparing the two examples, the second one takes a bit more work to set up but once the layout constraints are set, the stack view will automatically handle resizing and positioning of the controls. The stack view also makes it easy to add additional views and controls to the window.
 
-This project makes use of `NSStackView` to layout the controls in the window.
+This project makes use of `NSStackView` to layout the controls in the window and provides several helper functions to simplify the creation of views and controls. For example, the above can be rewritten as:
+
+```python
+import appkitgui as akg
+
+window = akg.window("Example", 200, 200)
+main_view = akg.main_view(window)
+button = akg.button("Choose File")
+main_view.append(button)
+```
+
+AppKitGUI is not intended to be a complete GUI framework but it does vastly simplify the creation of simple GUI applications while allowing you to still access the AppKit objects directly.
 
 ### Properties
 

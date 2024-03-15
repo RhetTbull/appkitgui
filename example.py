@@ -42,6 +42,7 @@ from appkitgui import (
     image_view,
     label,
     link,
+    main_view,
     menu_bar,
     menu_item,
     menu_main,
@@ -51,6 +52,7 @@ from appkitgui import (
     radio_button,
     time_picker,
     vstack,
+    window,
 )
 
 # constants
@@ -67,46 +69,12 @@ class DemoWindow(NSObject):
         """Create the NSWindow object"""
         # use @python_method decorator to tell objc this is called using python
         # conventions, not objc conventions
-        window = NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
-            NSMakeRect(0, 0, 600, 600),
-            AppKit.NSWindowStyleMaskTitled
-            | AppKit.NSWindowStyleMaskClosable
-            | AppKit.NSWindowStyleMaskResizable,
-            AppKit.NSBackingStoreBuffered,
-            False,
-        )
-        window.center()
-        window.setTitle_("Demo Window")
-        return window
+        return window("Demo Window", (600, 600))
 
     @python_method
     def create_main_view(self, window: NSWindow) -> NSStackView:
         """Create the main NStackView for the app and add it to the window"""
-
-        # This uses appkitgui.StackView which is a subclass of NSStackView
-        # that supports some list methods such as append, extend, remove, ...
-        main_view = StackView.stackViewWithViews_(None)
-        main_view.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
-        main_view.setSpacing_(PADDING)
-        main_view.setEdgeInsets_(EDGE_INSETS)
-        main_view.setDistribution_(AppKit.NSStackViewDistributionFill)
-        main_view.setAlignment_(AppKit.NSLayoutAttributeLeft)
-
-        window.contentView().addSubview_(main_view)
-        top_constraint = main_view.topAnchor().constraintEqualToAnchor_(
-            main_view.superview().topAnchor()
-        )
-        top_constraint.setActive_(True)
-        left_constraint = main_view.leftAnchor().constraintEqualToAnchor_(
-            main_view.superview().leftAnchor()
-        )
-        left_constraint.setActive_(True)
-        right_constraint = main_view.rightAnchor().constraintEqualToAnchor_(
-            main_view.superview().rightAnchor()
-        )
-        right_constraint.setActive_(True)
-
-        return main_view
+        return main_view(window, PADDING, EDGE_INSETS)
 
     def create_menus(self) -> dict:
         menu_dict = {
