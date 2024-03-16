@@ -258,20 +258,9 @@ class ComboBoxDelegate(NSObject):
             else:
                 self.action_change(notification.object())
 
-    # this is not currently used, handled by action_return
-    # @objc_method
-    # def comboBox_textView_doCommandBySelector_(
-    #     self, combo_box, text_view, command_selector
-    # ):
-    #     if command_selector == b"insertNewline:":
-    #         if self.action_return:
-    #             self.action_return()
-    #         return True
-    #     return False
-
 
 class ComboBox(NSComboBox):
-    """NSComboBox that stores a reference it's delegate
+    """NSComboBox that stores a reference to its delegate
 
     Note:
         This is required to maintain a reference to the delegate, otherwise it will

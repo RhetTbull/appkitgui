@@ -24,6 +24,7 @@ from AppKit import (
 )
 from Foundation import NSMakeRect, NSMutableArray
 from objc import objc_method, python_method
+from PyObjCTools import AppHelper
 
 from appkitgui import (
     MenuItem,
@@ -386,7 +387,9 @@ class App:
 
             # run the app
             NSApp.activateIgnoringOtherApps_(True)
-            return NSApp.run()
+
+            # Use AppHelper.runEventLoop() to run the app instead of NSApp.run() to let pyobjc handle the event loop
+            AppHelper.runEventLoop(installInterrupt=True)
 
 
 def main():
