@@ -51,6 +51,8 @@ from appkitgui import (
     menus_from_dict,
     nsdate_to_datetime,
     radio_button,
+    text_field,
+    text_view,
     time_picker,
     vstack,
     window,
@@ -229,6 +231,20 @@ class DemoWindow(NSObject):
             )
             self.hstack5.append(self.time_picker)
 
+            self.hsep4 = hseparator()
+            self.main_view.append(self.hsep4)
+            self.hstack6 = hstack(align=AppKit.NSLayoutAttributeTop)
+            self.main_view.append(self.hstack6)
+            self.text_field = text_field(
+                placeholder="Type some text here",
+                target=self,
+                action="textFieldAction:",
+            )
+            self.hstack6.append(self.text_field)
+            self.text_view = text_view((200, 100))
+            self.text_view.setString_("Hello World!\nThis is a scrollable text view.")
+            self.hstack6.append(self.text_view)
+
             # finish setting up the window
             self.window.makeKeyAndOrderFront_(None)
             self.window.setIsVisible_(True)
@@ -280,6 +296,11 @@ class DemoWindow(NSObject):
         # must be done manually
         time = nsdate_to_datetime(sender.dateValue()).time()
         print(f"Time: {time.strftime('%H:%M:%S')}")
+
+    def textFieldAction_(self, sender):
+        """Handle text field change"""
+        # This gets called when the user changes the text in the text field
+        print("Text field: ", sender.stringValue())
 
     def openWindow_(self, sender):
         print("openWindow")

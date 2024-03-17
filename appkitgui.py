@@ -27,7 +27,7 @@ from AppKit import (
     NSTimeZone,
     NSView,
 )
-from Foundation import NSURL, NSDate, NSMakeRect, NSObject
+from Foundation import NSURL, NSDate, NSMakeRect, NSMakeSize, NSObject
 from objc import objc_method, python_method, super
 
 ################################################################################
@@ -88,6 +88,10 @@ def main_view(
         main_view.superview().topAnchor()
     )
     top_constraint.setActive_(True)
+    bottom_constraint = main_view.bottomAnchor().constraintEqualToAnchor_(
+        main_view.superview().bottomAnchor()
+    )
+    bottom_constraint.setActive_(True)
     left_constraint = main_view.leftAnchor().constraintEqualToAnchor_(
         main_view.superview().leftAnchor()
     )
@@ -271,6 +275,58 @@ class ComboBox(NSComboBox):
         self.delegate = delegate
         if delegate is not None:
             super().setDelegate_(delegate)
+
+
+class ScrollViewWithTextView(NSScrollView):
+    def initWithSize_VScroll_(self, size: tuple[float, float], vscroll: bool):
+        self = super().initWithFrame_(NSMakeRect(0, 0, *size))
+        if not self:
+            return
+        self.setBorderType_(AppKit.NSBezelBorder)
+        self.setHasVerticalScroller_(vscroll)
+        self.setDrawsBackground_(True)
+        self.setAutohidesScrollers_(True)
+        self.setAutoresizingMask_(
+            AppKit.NSViewWidthSizable | AppKit.NSViewHeightSizable
+        )
+        self.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
+        width_constraint = self.widthAnchor().constraintEqualToConstant_(size[0])
+        width_constraint.setActive_(True)
+        height_constraint = self.heightAnchor().constraintEqualToConstant_(size[1])
+        height_constraint.setActive_(True)
+
+        contentSize = self.contentSize()
+        self.textView = NSTextView.alloc().initWithFrame_(self.contentView().frame())
+        self.textView.setMinSize_(NSMakeSize(0.0, contentSize.height))
+        self.textView.setMaxSize_(NSMakeSize(float("inf"), float("inf")))
+        self.textView.setVerticallyResizable_(True)
+        self.textView.setHorizontallyResizable_(False)
+        self.setDocumentView_(self.textView)
+
+        return self
+
+    # provide access to some of the text view's methods
+    def string(self):
+        return self.textView.string()
+
+    def setString_(self, text: str):
+        self.textView.setString_(text)
+
+    def setEditable_(self, editable: bool):
+        self.textView.setEditable_(editable)
+
+    def setSelectable_(self, selectable: bool):
+        self.textView.setSelectable_(selectable)
+
+    def setFont_(self, font: AppKit.NSFont):
+        self.textView.setFont_(font)
+
+    def setTextColor_(self, color: AppKit.NSColor):
+        self.textView.setTextColor_(color)
+
+    def setBackgroundColor_(self, color: AppKit.NSColor):
+        self.textView.setBackgroundColor_(color)
 
 
 ################################################################################
@@ -577,6 +633,39 @@ def time_picker(
         target=target,
         action=action,
     )
+
+
+def text_view(
+    size: tuple[float, float] = (400, 100), vscroll: bool = True
+) -> NSTextView:
+    """Create a text view with optional vertical scroll"""
+    return ScrollViewWithTextView.alloc().initWithSize_VScroll_(size, vscroll)
+
+
+def text_field(
+    size: tuple[float, float] = (200, 25),
+    placeholder: str | None = None,
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+) -> NSTextField:
+    """Create a text field"""
+    if (target and not action) or (action and not target):
+        raise ValueError("Both target and action must be provided")
+    text_field = NSTextField.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
+    text_field.setBezeled_(True)
+    text_field.setBezelStyle_(AppKit.NSTextFieldSquareBezel)
+    text_field.setTranslatesAutoresizingMaskIntoConstraints_(False)
+    width_constraint = text_field.widthAnchor().constraintEqualToConstant_(size[0])
+    width_constraint.setActive_(True)
+    height_constraint = text_field.heightAnchor().constraintEqualToConstant_(size[1])
+    height_constraint.setActive_(True)
+    if placeholder:
+        text_field.setPlaceholderString_(placeholder)
+    if target and action:
+        text_field.setTarget_(target)
+        text_field.setAction_(action)
+
+    return text_field
 
 
 ################################################################################
