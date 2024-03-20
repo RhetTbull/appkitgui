@@ -64,12 +64,7 @@ def window(title: str, size: tuple[int, int] = (600, 600)) -> AppKit.NSWindow:
 def main_view(
     window: AppKit.NSWindow,
     padding: int = PADDING,
-    edge_insets: tuple[int, int, int, int] = (
-        EDGE_INSET,
-        EDGE_INSET,
-        EDGE_INSET,
-        EDGE_INSET,
-    ),
+    edge_inset: tuple[float, float, float, float] | float = EDGE_INSET,
     align: int = AppKit.NSLayoutAttributeLeft,
 ) -> AppKit.NSView:
     """Create a main NSStackView for the window which contains all other views"""
@@ -79,6 +74,11 @@ def main_view(
     main_view = StackView.stackViewWithViews_(None)
     main_view.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
     main_view.setSpacing_(padding)
+    if isinstance(edge_inset, (int, float)):
+        # use even insets
+        edge_insets = (edge_inset, edge_inset, edge_inset, edge_inset)
+    else:
+        edge_insets = edge_inset
     main_view.setEdgeInsets_(edge_insets)
     main_view.setDistribution_(AppKit.NSStackViewDistributionFill)
     main_view.setAlignment_(align)
@@ -838,7 +838,7 @@ def constrain_stacks_side_by_side(
     weights: list[float] | None = None,
     parent: NSStackView | None = None,
     padding: int = 0,
-    edge_inset: int = 0,
+    edge_inset: float = 0,
 ):
     """Constrain a list of NSStackViews to be side by side optionally using weighted widths
 
@@ -909,7 +909,7 @@ def constrain_stacks_top_to_bottom(
     weights: list[float] | None = None,
     parent: NSStackView | None = None,
     padding: int = 0,
-    edge_inset: int = 0,
+    edge_inset: float = 0,
 ):
     """Constrain a list of NSStackViews to be top to bottom optionally using weighted widths
 
@@ -976,7 +976,7 @@ def constrain_stacks_top_to_bottom(
 
 
 def constrain_to_parent_width(
-    view: NSView, parent: NSView | None = None, edge_inset: int = 0
+    view: NSView, parent: NSView | None = None, edge_inset: float = 0
 ):
     """Constrain an NSView to the width of its parent
 
