@@ -344,7 +344,6 @@ def hstack(
     ) = None,
 ) -> StackView:
     """Create a horizontal StackView"""
-    distribute = None
     hstack = StackView.stackViewWithViews_(views)
     hstack.setSpacing_(PADDING)
     hstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationHorizontal)
