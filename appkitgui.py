@@ -46,18 +46,23 @@ PADDING = 8
 ################################################################################
 
 
-def window(title: str, size: tuple[int, int] = (600, 600)) -> AppKit.NSWindow:
+def window(
+    title: str | None = None,
+    size: tuple[int, int] = (600, 600),
+    mask: int = AppKit.NSWindowStyleMaskTitled
+    | AppKit.NSWindowStyleMaskClosable
+    | AppKit.NSWindowStyleMaskResizable,
+) -> AppKit.NSWindow:
     """Create a window with a title and size"""
     new_window = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
         NSMakeRect(0, 0, *size),
-        AppKit.NSWindowStyleMaskTitled
-        | AppKit.NSWindowStyleMaskClosable
-        | AppKit.NSWindowStyleMaskResizable,
+        mask,
         AppKit.NSBackingStoreBuffered,
         False,
     )
     new_window.center()
-    new_window.setTitle_(title)
+    if title is not None:
+        new_window.setTitle_(title)
     return new_window
 
 
@@ -611,16 +616,7 @@ def date_picker(
         size: size of the date picker
 
     Returns: NSDatePicker
-
-    Raises:
-        ValueError: if only one of target or action is provided
-
-    Note: If target and action are provided, the date picker will send the action to the target.
-    If one of target or action is provided, the other must also be provided.
     """
-    if (target and not action) or (action and not target):
-        raise ValueError("Both target and action must be provided")
-
     date = date or datetime.date.today()
     date_picker = NSDatePicker.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
     date_picker.setDatePickerStyle_(style)
@@ -630,10 +626,10 @@ def date_picker(
     date_picker.setTimeZone_(NSTimeZone.localTimeZone())
     date_picker.setTranslatesAutoresizingMaskIntoConstraints_(False)
 
-    if target and action:
+    if target:
         date_picker.setTarget_(target)
+    if action:
         date_picker.setAction_(action)
-
     return date_picker
 
 
@@ -657,12 +653,8 @@ def time_picker(
 
     Returns: NSDatePicker
 
-    Raises:
-        ValueError: if only one of target or action is provided
 
-    Note: If target and action are provided, the time picker will send the action to the target.
-    If one of target or action is provided, the other must also be provided.
-    This function is a wrapper around date_picker, with the date picker style set to
+    Note: This function is a wrapper around date_picker, with the date picker style set to
     display a time picker.
     """
     # if time is only a time, convert to datetime with today's date
@@ -694,8 +686,6 @@ def text_field(
     action: Callable | str | None = None,
 ) -> NSTextField:
     """Create a text field"""
-    if (target and not action) or (action and not target):
-        raise ValueError("Both target and action must be provided")
     text_field = NSTextField.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
     text_field.setBezeled_(True)
     text_field.setBezelStyle_(AppKit.NSTextFieldSquareBezel)
@@ -706,8 +696,9 @@ def text_field(
     height_constraint.setActive_(True)
     if placeholder:
         text_field.setPlaceholderString_(placeholder)
-    if target and action:
+    if target:
         text_field.setTarget_(target)
+    if action:
         text_field.setAction_(action)
 
     return text_field
