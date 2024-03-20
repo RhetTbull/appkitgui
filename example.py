@@ -77,7 +77,7 @@ class DemoWindow(NSObject):
     @python_method
     def create_main_view(self, window: NSWindow) -> NSStackView:
         """Create the main NStackView for the app and add it to the window"""
-        return main_view(window, PADDING, EDGE_INSETS)
+        return main_view(window, padding=PADDING, edge_inset=EDGE_INSETS)
 
     def create_menus(self) -> dict:
         menu_dict = {

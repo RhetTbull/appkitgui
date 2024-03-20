@@ -63,11 +63,18 @@ def window(title: str, size: tuple[int, int] = (600, 600)) -> AppKit.NSWindow:
 
 def main_view(
     window: AppKit.NSWindow,
+    align: int = AppKit.NSLayoutAttributeLeft,
     padding: int = PADDING,
     edge_inset: tuple[float, float, float, float] | float = EDGE_INSET,
-    align: int = AppKit.NSLayoutAttributeLeft,
 ) -> AppKit.NSView:
-    """Create a main NSStackView for the window which contains all other views"""
+    """Create a main NSStackView for the window which contains all other views
+
+    Args:
+        window: the NSWindow to attach the view to
+        align: NSLayoutAttribute alignment constant
+        padding: padding between elements
+        edge_inset: The geometric padding, in points, inside the stack view, surrounding its views (NSEdgeInsets)
+    """
 
     # This uses appkitgui.StackView which is a subclass of NSStackView
     # that supports some list methods such as append, extend, remove, ...
@@ -342,8 +349,20 @@ def hstack(
     views: (
         Iterable[AppKit.NSView] | AppKit.NSArray | AppKit.NSMutableArray | None
     ) = None,
+    edge_inset: tuple[float, float, float, float] | float = 0,
 ) -> StackView:
-    """Create a horizontal StackView"""
+    """Create a horizontal StackView
+
+    Args:
+        align:NSLayoutAttribute alignment constant
+        distribute: NSStackViewDistribution distrubution constant
+        vscroll: True to add vertical scrollbar
+        hscroll: True to add horizontal scrollbar
+        views: iterable of NSViews to add to the stack
+        edge_inset: The geometric padding, in points, inside the stack view, surrounding its views (NSEdgeInsets)
+
+    Returns: StackView
+    """
     hstack = StackView.stackViewWithViews_(views)
     hstack.setSpacing_(PADDING)
     hstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationHorizontal)
@@ -355,6 +374,13 @@ def hstack(
         AppKit.NSLayoutPriorityDefaultHigh,
         AppKit.NSLayoutConstraintOrientationHorizontal,
     )
+    if edge_inset:
+        if isinstance(edge_inset, (int, float)):
+            # use even insets
+            edge_insets = (edge_inset, edge_inset, edge_inset, edge_inset)
+        else:
+            edge_insets = edge_inset
+        hstack.setEdgeInsets_(edge_insets)
     if vscroll or hscroll:
         scroll_view = ScrolledStackView.alloc().initWithStack_(hstack, vscroll, hscroll)
         return scroll_view
@@ -367,8 +393,20 @@ def vstack(
     vscroll: bool = False,
     hscroll: bool = False,
     views: AppKit.NSArray | AppKit.NSMutableArray | None = None,
+    edge_inset: tuple[float, float, float, float] | float = 0,
 ) -> StackView | ScrolledStackView:
-    """Create a vertical StackView"""
+    """Create a vertical StackView
+
+    Args:
+        align:NSLayoutAttribute alignment constant
+        distribute: NSStackViewDistribution distrubution constant
+        vscroll: True to add vertical scrollbar
+        hscroll: True to add horizontal scrollbar
+        views: iterable of NSViews to add to the stack
+        edge_inset: The geometric padding, in points, inside the stack view, surrounding its views (NSEdgeInsets)
+
+    Returns: StackView
+    """
     vstack = StackView.stackViewWithViews_(views)
     vstack.setSpacing_(PADDING)
     vstack.setOrientation_(AppKit.NSUserInterfaceLayoutOrientationVertical)
@@ -381,6 +419,14 @@ def vstack(
         AppKit.NSLayoutPriorityDefaultHigh,
         AppKit.NSLayoutConstraintOrientationVertical,
     )
+    if edge_inset:
+        if isinstance(edge_inset, (int, float)):
+            # use even insets
+            edge_insets = (edge_inset, edge_inset, edge_inset, edge_inset)
+        else:
+            edge_insets = edge_inset
+        vstack.setEdgeInsets_(edge_insets)
+
     if vscroll or hscroll:
         scroll_view = ScrolledStackView.alloc().initWithStack_(vstack, vscroll, hscroll)
         return scroll_view
