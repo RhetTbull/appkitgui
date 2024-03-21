@@ -347,8 +347,8 @@ class ScrollViewWithTextView(NSScrollView):
 
 
 def hstack(
-    align: int = AppKit.NSLayoutAttributeCenterY,
-    distribute: int | None = None,
+    align: int = AppKit.NSLayoutAttributeTop,
+    distribute: int | None = AppKit.NSStackViewDistributionFill,
     vscroll: bool = False,
     hscroll: bool = False,
     views: (

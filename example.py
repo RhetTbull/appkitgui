@@ -62,6 +62,8 @@ from appkitgui import (
 EDGE_INSET = 20
 EDGE_INSETS = (EDGE_INSET, EDGE_INSET, EDGE_INSET, EDGE_INSET)
 PADDING = 8
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
 
 
 class DemoWindow(NSObject):
@@ -72,7 +74,7 @@ class DemoWindow(NSObject):
         """Create the NSWindow object"""
         # use @python_method decorator to tell objc this is called using python
         # conventions, not objc conventions
-        return window("Demo Window", (600, 600))
+        return window("Demo Window", (WINDOW_WIDTH, WINDOW_HEIGHT))
 
     @python_method
     def create_main_view(self, window: NSWindow) -> NSStackView:
