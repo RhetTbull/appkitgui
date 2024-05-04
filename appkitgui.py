@@ -27,7 +27,7 @@ from AppKit import (
     NSTimeZone,
     NSView,
 )
-from Foundation import NSURL, NSDate, NSMakeRect, NSMakeSize, NSObject
+from Foundation import NSURL, NSDate, NSLog, NSMakeRect, NSMakeSize, NSObject
 from objc import objc_method, python_method, super
 
 ################################################################################
@@ -1077,3 +1077,19 @@ def constrain_center_y_to_parent(view: NSView, parent: NSView | None = None):
     view.centerYAnchor().constraintEqualToAnchor_(parent.centerYAnchor()).setActive_(
         True
     )
+
+
+def constrain_trailing_anchor_to_parent(
+    view: NSView, parent: NSView | None = None, edge_inset: float = EDGE_INSET
+):
+    """Constrain an NSView's trailing anchor to it's parent
+
+    Args:
+        view: NSView to constrain
+        parent: NSView to constrain the control to; if None, uses view.superview()
+        inset: inset from trailing edge to apply to constraint (inset will be subtracted from trailing edge)
+    """
+    parent = parent or view.superview()
+    view.trailingAnchor().constraintEqualToAnchor_constant_(
+        parent.trailingAnchor(), -edge_inset
+    ).setActive_(True)
