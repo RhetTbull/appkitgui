@@ -20,6 +20,7 @@ from AppKit import (
     NSComboBox,
     NSDatePicker,
     NSImageView,
+    NSPopUpButton,
     NSScrollView,
     NSStackView,
     NSTextField,
@@ -533,6 +534,35 @@ def combo_box(
     if width is not None:
         constrain_to_width(combo_box, width)
     return combo_box
+
+
+def popup_button(
+    values: list[str] | None,
+    target: NSObject,
+    action: Callable | str | None = None,
+    width: float | None = None,
+) -> NSPopUpButton:
+    """Create a popup button
+
+    Args:
+        values: list of values to populate the popup button with
+        target: target to send action to
+        action: action to send when the selection is changed
+        width: width of the popup button; if None, the popup button will resize to the contents
+    """
+
+    popup_button = NSPopUpButton.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25))
+    if values:
+        popup_button.addItemsWithTitles_(values)
+        popup_button.selectItemAtIndex_(0)
+    if width is not None:
+        constrain_to_width(popup_button, width)
+    if target:
+        popup_button.setTarget_(target)
+    if action:
+        popup_button.setAction_(action)
+
+    return popup_button
 
 
 def hseparator() -> NSBox:

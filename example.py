@@ -56,6 +56,7 @@ from appkitgui import (
     time_picker,
     vstack,
     window,
+    popup_button,
 )
 
 # constants
@@ -176,6 +177,12 @@ class DemoWindow(NSObject):
             )
             self.hstack2.append(self.combo_box_2)
 
+            # add a popup button
+            self.popup_button = popup_button(
+                ["Item 1", "Item 2", "Item 3"], self, self.popUpButtonAction_
+            )
+            self.hstack2.append(self.popup_button)
+
             # add a horizontal separator
             self.hsep = hseparator()
             self.main_view.append(self.hsep)
@@ -280,6 +287,11 @@ class DemoWindow(NSObject):
         """Handle combo box return"""
         # This gets called when user hits return in the combo box
         print("Combo box edited: ", sender.stringValue())
+
+    def popUpButtonAction_(self, sender):
+        """Handle popup button selection change"""
+        # This gets called when the user selects an item in the popup button
+        print("Pop up button selection: ", sender.selectedItem().title())
 
     def datePickerAction_(self, sender):
         """Handle date picker change"""
