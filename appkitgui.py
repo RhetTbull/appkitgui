@@ -17,11 +17,14 @@ from AppKit import (
     NSApp,
     NSBox,
     NSButton,
+    NSColor,
+    NSColorWell,
     NSComboBox,
     NSDatePicker,
     NSImageView,
     NSPopUpButton,
     NSScrollView,
+    NSSlider,
     NSStackView,
     NSStepper,
     NSTextField,
@@ -596,11 +599,11 @@ def stepper(
     """Create a stepper control.
 
     Args:
-        min: minimum value
-        max: maximum value
+        min_value: minimum value
+        max_value: maximum value
         target: target to send action to
-        action: action to send when the selection is changed
-        value: the current value to set the stepper to; defaults to min
+        action: action to send when the value is changed
+        value: the current value to set the stepper to; defaults to min_value
         increment: The amount by which the stepper changes with each increment or decrement; defaults to 1
 
     Returns: NSStepper
@@ -620,6 +623,66 @@ def stepper(
     if action:
         stepper.setAction_(action)
     return stepper
+
+
+def slider(
+    min_value: float,
+    max_value: float,
+    target: NSObject,
+    action: Callable | str,
+    value: float | None = None,
+    width: float = 150,
+    height: float = 30,
+) -> NSSlider:
+    """Create an NSSlider
+
+    Args:
+        min_value: minimum value
+        max_value: maximum value
+        target: target to send action to
+        action: action to send when the slider is changed
+        value: the current value to set the slider to; defaults to min_value
+        width: width of the slider
+        height: height of the slider
+
+    Returns: NSSlider
+    """
+
+    slider = NSSlider.sliderWithValue_minValue_maxValue_target_action_(
+        value, min_value, max_value, target, action
+    )
+    slider.setFrame_(NSMakeRect(0, 0, width, height))
+    constrain_to_width_height(slider, width, height)
+    return slider
+
+
+def color_well(
+    color: NSColor,
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+    width: float = 50,
+    height: float = 30,
+) -> NSSlider:
+    """Create an NSColorWell
+
+    Args:
+        color: NSColor to set as initial color
+        target: target to send action to
+        action: action to send when the color is changed
+        width: width of color well control
+        height: height of color well control
+
+    Returns: NSColorWell
+    """
+
+    color_well = NSColorWell.alloc().initWithFrame_(NSMakeRect(0, 0, width, height))
+    color_well.setColor_(color)
+    if target:
+        color_well.setTarget_(target)
+    if action:
+        color_well.setAction_(action)
+    constrain_to_width_height(color_well, width, height)
+    return color_well
 
 
 def hseparator() -> NSBox:
@@ -1138,6 +1201,20 @@ def constrain_to_height(view: NSView, height: float | None = None):
     """
     if height is not None:
         view.heightAnchor().constraintEqualToConstant_(height).setActive_(True)
+
+
+def constrain_to_width_height(
+    view: NSView, width: float | None = None, height: float | None = None
+):
+    """Constrain an NSView to a fixed width and height
+
+    Args:
+        view: NSView to constrain
+        width: width to constrain to; if None, does not apply a width constraint
+        height: height to constrain to; if None, does not apply a height constraint
+    """
+    constrain_to_height(view, height)
+    constrain_to_width(view, width)
 
 
 def constrain_center_x_to_parent(view: NSView, parent: NSView | None = None):

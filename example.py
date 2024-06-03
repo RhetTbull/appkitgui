@@ -12,18 +12,22 @@ import objc
 from AppKit import (
     NSApp,
     NSApplication,
+    NSBezierPath,
     NSButton,
+    NSColor,
     NSMenu,
     NSMenuItem,
     NSObject,
     NSOnState,
     NSOpenPanel,
     NSProcessInfo,
+    NSRectFill,
     NSStackView,
+    NSView,
     NSWindow,
 )
 from Foundation import NSMakeRect, NSMutableArray
-from objc import objc_method, python_method
+from objc import objc_method, python_method, super
 from PyObjCTools import AppHelper
 
 from appkitgui import (
@@ -31,6 +35,7 @@ from appkitgui import (
     StackView,
     button,
     checkbox,
+    color_well,
     combo_box,
     configure,
     constrain_stacks_side_by_side,
@@ -38,6 +43,7 @@ from appkitgui import (
     constrain_to_height,
     constrain_to_parent_width,
     constrain_to_width,
+    constrain_to_width_height,
     date_picker,
     hseparator,
     hstack,
@@ -53,6 +59,7 @@ from appkitgui import (
     nsdate_to_datetime,
     popup_button,
     radio_button,
+    slider,
     stepper,
     text_field,
     text_view,
@@ -67,6 +74,39 @@ EDGE_INSETS = (EDGE_INSET, EDGE_INSET, EDGE_INSET, EDGE_INSET)
 PADDING = 8
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
+
+
+class DotView(NSView):
+    """Draw a colored dot on the screen
+
+    This code based on an example by @vsquared: https://github.com/vsquared
+    """
+
+    def initWithFrame_(self, frame):
+        super().initWithFrame_(frame)
+        self.radius = 25
+        self.color = NSColor.orangeColor()
+        return self
+
+    def changeRadius_(self, sender):
+        self.radius = sender.value()
+        self.setNeedsDisplay_(True)
+
+    def changeColor_(self, sender):
+        self.color = sender.color()
+        self.setNeedsDisplay_(True)
+
+    def drawRect_(self, rect):
+        NSColor.whiteColor().set()
+        NSRectFill(self.bounds())
+        self.dotRect = NSMakeRect(
+            self.bounds().size.width / 2 - self.radius,
+            self.bounds().size.height / 2 - self.radius,
+            self.radius * 2,
+            self.radius * 2,
+        )
+        self.color.set()
+        NSBezierPath.bezierPathWithOvalInRect_(self.dotRect).fill()
 
 
 class DemoWindow(NSObject):
@@ -209,7 +249,7 @@ class DemoWindow(NSObject):
             constrain_to_parent_width(self.hsep, self.main_view, EDGE_INSET)
 
             # add an image
-            self.hstack3 = hstack()
+            self.hstack3 = hstack(align=AppKit.NSLayoutAttributeCenterY)
             self.main_view.append(self.hstack3)
             self.image = image_view(
                 "image.jpeg", width=150, align=AppKit.NSImageAlignCenter
@@ -229,7 +269,19 @@ class DemoWindow(NSObject):
             self.vstack3.extend([self.button_add, self.label_stack, self.button_remove])
 
             self.vstack4 = vstack(vscroll=True)
+            constrain_to_width(self.vstack4, 100)
             self.hstack3.append(self.vstack4)
+
+            # add DotView with slider and color well
+            self.dot_view = DotView.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 100))
+            constrain_to_width_height(self.dot_view, 100, 100)
+            self.color_well = color_well(
+                NSColor.orangeColor(), self.dot_view, "changeColor:", 50, 30
+            )
+            self.slider = slider(0, 60, self.dot_view, "changeRadius:", 25, width=150)
+            self.hstack3.append(self.slider)
+            self.hstack3.append(self.color_well)
+            self.hstack3.append(self.dot_view)
 
             self.hsep2 = hseparator()
             self.main_view.append(self.hsep2)
@@ -311,6 +363,10 @@ class DemoWindow(NSObject):
         """Handle popup button selection change"""
         # This gets called when the user selects an item in the popup button
         print("Pop up button selection: ", sender.selectedItem().title())
+
+    def sliderAction_(self, sender):
+        """Handle slider action"""
+        print(f"{sender=}")
 
     def datePickerAction_(self, sender):
         """Handle date picker change"""
