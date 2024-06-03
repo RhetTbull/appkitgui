@@ -348,6 +348,25 @@ class ScrollViewWithTextView(NSScrollView):
 ################################################################################
 
 
+def configure(obj: NSObject, **kwargs):
+    """Configure a control with the given attributes.
+
+    Args:
+        obj: the control object to configure
+        **kwargs: keyword/value attributes to configure
+
+    Example:
+        configure(self.radio1, state = NSOnState) is the same as:
+            self.radio1.setState_(NSOnState)
+        Multiple attributes can be configured at once:
+            configure(self.radio1, state = NSOnState, enabled = False)
+    """
+    for key, value in kwargs.items():
+        method = f"set{key[0].upper()}{key[1:]}_"
+        if hasattr(obj, method):
+            getattr(obj, method)(value)
+
+
 def hstack(
     align: int = AppKit.NSLayoutAttributeTop,
     distribute: int | None = AppKit.NSStackViewDistributionFill,

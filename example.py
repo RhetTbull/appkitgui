@@ -32,6 +32,7 @@ from appkitgui import (
     button,
     checkbox,
     combo_box,
+    configure,
     constrain_stacks_side_by_side,
     constrain_stacks_top_to_bottom,
     constrain_to_height,
@@ -191,9 +192,12 @@ class DemoWindow(NSObject):
             self.stepper = stepper(
                 0, 100, self.stepper_field, "takeIntValueFrom:", 1, 1
             )
-            self.stepper_field.setEditable_(False)
-            self.stepper_field.setSelectable_(False)
-            self.stepper_field.setAlignment_(AppKit.NSCenterTextAlignment)
+            configure(
+                self.stepper_field,
+                editable=False,
+                selectable=False,
+                alignment=AppKit.NSCenterTextAlignment,
+            )
             self.stepper_field.takeStringValueFrom_(self.stepper)
             self.hstack2.append(self.stepper)
             self.hstack2.append(self.stepper_field)
