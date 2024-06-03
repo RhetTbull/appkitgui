@@ -50,13 +50,14 @@ from appkitgui import (
     menu_with_submenu,
     menus_from_dict,
     nsdate_to_datetime,
+    popup_button,
     radio_button,
+    stepper,
     text_field,
     text_view,
     time_picker,
     vstack,
     window,
-    popup_button,
 )
 
 # constants
@@ -182,6 +183,20 @@ class DemoWindow(NSObject):
                 ["Item 1", "Item 2", "Item 3"], self, self.popUpButtonAction_
             )
             self.hstack2.append(self.popup_button)
+
+            # add a stepper and an associated value field
+            # the text field used to show value must be created first
+            # so that it can be used as the target of the stepper
+            self.stepper_field = text_field((40, 24), "0", self)
+            self.stepper = stepper(
+                0, 100, self.stepper_field, "takeIntValueFrom:", 1, 1
+            )
+            self.stepper_field.setEditable_(False)
+            self.stepper_field.setSelectable_(False)
+            self.stepper_field.setAlignment_(AppKit.NSCenterTextAlignment)
+            self.stepper_field.takeStringValueFrom_(self.stepper)
+            self.hstack2.append(self.stepper)
+            self.hstack2.append(self.stepper_field)
 
             # add a horizontal separator
             self.hsep = hseparator()

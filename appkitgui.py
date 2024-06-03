@@ -23,6 +23,7 @@ from AppKit import (
     NSPopUpButton,
     NSScrollView,
     NSStackView,
+    NSStepper,
     NSTextField,
     NSTextView,
     NSTimeZone,
@@ -538,7 +539,7 @@ def combo_box(
 
 def popup_button(
     values: list[str] | None,
-    target: NSObject,
+    target: NSObject | None = None,
     action: Callable | str | None = None,
     width: float | None = None,
 ) -> NSPopUpButton:
@@ -563,6 +564,43 @@ def popup_button(
         popup_button.setAction_(action)
 
     return popup_button
+
+
+def stepper(
+    min_value: float,
+    max_value: float,
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+    value: float | None = None,
+    increment: float | None = None,
+) -> NSStepper:
+    """Create a stepper control.
+
+    Args:
+        min: minimum value
+        max: maximum value
+        target: target to send action to
+        action: action to send when the selection is changed
+        value: the current value to set the stepper to; defaults to min
+        increment: The amount by which the stepper changes with each increment or decrement; defaults to 1
+
+    Returns: NSStepper
+    """
+    stepper = NSStepper.alloc().initWithFrame_(NSMakeRect(0, 0, 24, 30))
+    stepper.setContinuous_(True)
+    stepper.setAutorepeat_(True)
+    stepper.setValueWraps_(False)
+    if increment is not None:
+        stepper.setIncrement_(increment)
+    stepper.setMinValue_(min_value)
+    stepper.setMaxValue_(max_value)
+    value = value if value is not None else min_value
+    stepper.setIntValue_(value)
+    if target:
+        stepper.setTarget_(target)
+    if action:
+        stepper.setAction_(action)
+    return stepper
 
 
 def hseparator() -> NSBox:
