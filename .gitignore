@@ -20,3 +20,4 @@ venv/
 cov.xml
 .doit.db.db
 scratch/
+pyrightconfig.json
