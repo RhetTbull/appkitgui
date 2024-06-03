@@ -37,7 +37,6 @@ from appkitgui import (
     checkbox,
     color_well,
     combo_box,
-    configure,
     constrain_stacks_side_by_side,
     constrain_stacks_top_to_bottom,
     constrain_to_height,
@@ -230,10 +229,12 @@ class DemoWindow(NSObject):
             # so that it can be used as the target of the stepper
             self.stepper_field = text_field((40, 24), "0", self)
             self.stepper = stepper(
-                0, 100, self.stepper_field, "takeIntValueFrom:", 1, 1
-            )
-            configure(
-                self.stepper_field,
+                min_value=0,
+                max_value=100,
+                target=self.stepper_field,
+                action="takeIntValueFrom:",
+                value=1,
+                increment=1,
                 editable=False,
                 selectable=False,
                 alignment=AppKit.NSCenterTextAlignment,
@@ -321,8 +322,9 @@ class DemoWindow(NSObject):
                 action="textFieldAction:",
             )
             self.hstack6.append(self.text_field)
-            self.text_view = text_view((200, 100))
-            self.text_view.setString_("Hello World!\nThis is a scrollable text view.")
+            self.text_view = text_view(
+                (200, 100), string="Hello World!\nThis is a scrollable text view."
+            )
             self.hstack6.append(self.text_view)
 
             # finish setting up the window

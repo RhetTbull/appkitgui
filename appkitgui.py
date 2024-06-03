@@ -467,12 +467,21 @@ def hspacer() -> NSStackView:
     return vstack()
 
 
-def label(value: str) -> NSTextField:
-    """Create a label"""
+def label(value: str, **kwargs) -> NSTextField:
+    """Create a label.
+
+    Args:
+        value: the text value of the label
+        **kwargs: additional keyword/value attributes to configure
+
+    Returns: NSTextField label
+    """
     label = NSTextField.labelWithString_(value)
     label.setEditable_(False)
     label.setBordered_(False)
     label.setBackgroundColor_(AppKit.NSColor.clearColor())
+    if kwargs:
+        configure(label, **kwargs)
     return label
 
 
@@ -481,31 +490,67 @@ def link(text: str, url: str) -> NSTextField:
     return LinkLabel.alloc().initWithText_URL_(text, url)
 
 
-def button(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
-    """Create a button"""
+def button(
+    title: str, target: NSObject, action: Callable | str | None, **kwargs
+) -> NSButton:
+    """Create a button.
+
+    Args:
+            title: title text for the button
+            target: target to send action to
+            action: action to send when the selection is changed
+            **kwargs: additional keyword/value attributes to configure
+
+    Returns: NSButton
+    """
     button = NSButton.buttonWithTitle_target_action_(title, target, action)
     button.setTranslatesAutoresizingMaskIntoConstraints_(False)
 
     # set hugging priority and compression resistance to prevent button from resizing
     set_hugging_priority(button)
     set_compression_resistance(button)
-
+    if kwargs:
+        configure(button, **kwargs)
     return button
 
 
-def checkbox(title: str, target: NSObject, action: Callable | str | None) -> NSButton:
-    """Create a checkbox button"""
+def checkbox(
+    title: str, target: NSObject, action: Callable | str | None, **kwargs
+) -> NSButton:
+    """Create a checkbox button.
+
+    Args:
+            title: title text for the button
+            target: target to send action to
+            action: action to send when the selection is changed
+            **kwargs: additional keyword/value attributes to configure
+
+    Returns:  NSButton checkbox
+    """
     checkbox = NSButton.buttonWithTitle_target_action_(title, target, action)
     checkbox.setButtonType_(AppKit.NSButtonTypeSwitch)  # Switch button type
+    if kwargs:
+        configure(checkbox, **kwargs)
     return checkbox
 
 
 def radio_button(
-    title: str, target: NSObject, action: Callable | str | None
+    title: str, target: NSObject, action: Callable | str | None, **kwargs
 ) -> NSButton:
-    """Create a radio button"""
+    """Create a radio button
+
+    Args:
+            title: title text for the button
+            target: target to send action to
+            action: action to send when the selection is changed
+            **kwargs: additional keyword/value attributes to configure
+
+    Returns: NSButton radio button
+    """
     radio_button = NSButton.buttonWithTitle_target_action_(title, target, action)
     radio_button.setButtonType_(AppKit.NSRadioButton)
+    if kwargs:
+        configure(radio_button, **kwargs)
     return radio_button
 
 
@@ -517,6 +562,7 @@ def combo_box(
     action_change: Callable | str | None = None,
     delegate: NSObject | None = None,
     width: float | None = None,
+    **kwargs,
 ) -> NSComboBox:
     """Create a combo box
 
@@ -528,6 +574,7 @@ def combo_box(
         action_change: action to send when the selection is changed
         delegate: delegate to handle events; if not provided a default delegate is automatically created
         width: width of the combo box; if None, the combo box will resize to the contents
+        **kwargs: additional keyword/value attributes to configure
 
 
     Note:
@@ -553,9 +600,10 @@ def combo_box(
         combo_box.setAction_(action_return)
     combo_box.setCompletes_(True)
     combo_box.setEditable_(editable)
-
     if width is not None:
         constrain_to_width(combo_box, width)
+    if kwargs:
+        configure(combo_box, **kwargs)
     return combo_box
 
 
@@ -564,6 +612,8 @@ def popup_button(
     target: NSObject | None = None,
     action: Callable | str | None = None,
     width: float | None = None,
+    height: float | None = None,
+    **kwargs,
 ) -> NSPopUpButton:
     """Create a popup button
 
@@ -572,19 +622,21 @@ def popup_button(
         target: target to send action to
         action: action to send when the selection is changed
         width: width of the popup button; if None, the popup button will resize to the contents
+        height: height of the popup button; if None, the popup button will resize to the contents
+        **kwargs: additional keyword/value attributes to configure
     """
 
     popup_button = NSPopUpButton.alloc().initWithFrame_(NSMakeRect(0, 0, 100, 25))
     if values:
         popup_button.addItemsWithTitles_(values)
         popup_button.selectItemAtIndex_(0)
-    if width is not None:
-        constrain_to_width(popup_button, width)
+    constrain_to_width_height(popup_button, width, height)
     if target:
         popup_button.setTarget_(target)
     if action:
         popup_button.setAction_(action)
-
+    if kwargs:
+        configure(popup_button, **kwargs)
     return popup_button
 
 
@@ -595,6 +647,7 @@ def stepper(
     action: Callable | str | None = None,
     value: float | None = None,
     increment: float | None = None,
+    **kwargs,
 ) -> NSStepper:
     """Create a stepper control.
 
@@ -605,6 +658,7 @@ def stepper(
         action: action to send when the value is changed
         value: the current value to set the stepper to; defaults to min_value
         increment: The amount by which the stepper changes with each increment or decrement; defaults to 1
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSStepper
     """
@@ -622,6 +676,8 @@ def stepper(
         stepper.setTarget_(target)
     if action:
         stepper.setAction_(action)
+    if kwargs:
+        configure(stepper, **kwargs)
     return stepper
 
 
@@ -633,6 +689,7 @@ def slider(
     value: float | None = None,
     width: float = 150,
     height: float = 30,
+    **kwargs,
 ) -> NSSlider:
     """Create an NSSlider
 
@@ -644,6 +701,7 @@ def slider(
         value: the current value to set the slider to; defaults to min_value
         width: width of the slider
         height: height of the slider
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSSlider
     """
@@ -653,6 +711,8 @@ def slider(
     )
     slider.setFrame_(NSMakeRect(0, 0, width, height))
     constrain_to_width_height(slider, width, height)
+    if kwargs:
+        configure(slider, **kwargs)
     return slider
 
 
@@ -662,6 +722,7 @@ def color_well(
     action: Callable | str | None = None,
     width: float = 50,
     height: float = 30,
+    **kwargs,
 ) -> NSSlider:
     """Create an NSColorWell
 
@@ -671,6 +732,7 @@ def color_well(
         action: action to send when the color is changed
         width: width of color well control
         height: height of color well control
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSColorWell
     """
@@ -682,6 +744,8 @@ def color_well(
     if action:
         color_well.setAction_(action)
     constrain_to_width_height(color_well, width, height)
+    if kwargs:
+        configure(color_well, **kwargs)
     return color_well
 
 
@@ -699,6 +763,7 @@ def image_view(
     height: int | None = None,
     scale: int = AppKit.NSImageScaleProportionallyUpOrDown,
     align: int = AppKit.NSImageAlignCenter,
+    **kwargs,
 ) -> NSImageView:
     """Create an image view from a an image file.
 
@@ -708,6 +773,7 @@ def image_view(
         height: height to constrain the image to; if None, the image will not be constrained
         scale: scaling mode for the image
         align: alignment mode for the image
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSImageView
 
@@ -741,7 +807,8 @@ def image_view(
             image_view.widthAnchor().constraintEqualToConstant_(
                 scaled_width
             ).setActive_(True)
-
+    if kwargs:
+        configure(image_view, **kwargs)
     return image_view
 
 
@@ -753,6 +820,7 @@ def date_picker(
     target: NSObject | None = None,
     action: Callable | str | None = None,
     size: tuple[int, int] = (200, 50),
+    **kwargs,
 ) -> NSDatePicker:
     """Create a date picker
 
@@ -764,6 +832,7 @@ def date_picker(
         target: target to send action to
         action: action to send when the date is changed
         size: size of the date picker
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSDatePicker
     """
@@ -780,6 +849,8 @@ def date_picker(
         date_picker.setTarget_(target)
     if action:
         date_picker.setAction_(action)
+    if kwargs:
+        configure(date_picker, **kwargs)
     return date_picker
 
 
@@ -790,6 +861,7 @@ def time_picker(
     time: datetime.datetime | datetime.time | None = None,
     target: NSObject | None = None,
     action: Callable | str | None = None,
+    **kwargs,
 ) -> NSDatePicker:
     """Create a time picker
 
@@ -800,6 +872,7 @@ def time_picker(
         time: initial time of the date picker; if None, defaults to the current time
         target: target to send action to
         action: action to send when the date is changed
+        **kwargs: additional keyword/value attributes to configure
 
     Returns: NSDatePicker
 
@@ -812,7 +885,7 @@ def time_picker(
     if isinstance(time, datetime.time):
         time = datetime.datetime.combine(datetime.date.today(), time)
     time = time or datetime.datetime.now()
-    return date_picker(
+    tp = date_picker(
         style=style,
         elements=elements,
         mode=mode,
@@ -820,13 +893,29 @@ def time_picker(
         target=target,
         action=action,
     )
+    if kwargs:
+        configure(tp, **kwargs)
+    return tp
 
 
 def text_view(
-    size: tuple[float, float] = (400, 100), vscroll: bool = True
-) -> NSTextView:
-    """Create a text view with optional vertical scroll"""
-    return ScrollViewWithTextView.alloc().initWithSize_VScroll_(size, vscroll)
+    size: tuple[float, float] = (400, 100), vscroll: bool = True, **kwargs
+) -> NSScrollView:
+    """Create a text view with optional vertical scroll
+
+    Args:
+            size: width, height of the text view
+            vscroll: show vertical scroll bars
+            **kwargs: additional keyword/value attributes to configure
+
+    Returns: NSScrollView that contains an NSTextView
+
+    Note: Any kwargs will be used to configure the contained NSTextView, not the NSScrollView
+    """
+    tv = ScrollViewWithTextView.alloc().initWithSize_VScroll_(size, vscroll)
+    if kwargs:
+        configure(tv.textView, **kwargs)
+    return tv
 
 
 def text_field(
@@ -834,8 +923,19 @@ def text_field(
     placeholder: str | None = None,
     target: NSObject | None = None,
     action: Callable | str | None = None,
+    **kwargs,
 ) -> NSTextField:
-    """Create a text field"""
+    """Create a text field.
+
+    Args:
+        size: width, height of the text field
+        placeholder: placeholder text
+        target: target to send action to
+        action: action to send when the date is changed
+        **kwargs: additional keyword/value attributes to configure
+
+    Returns NSTextField
+    """
     text_field = NSTextField.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
     text_field.setBezeled_(True)
     text_field.setBezelStyle_(AppKit.NSTextFieldSquareBezel)
@@ -850,7 +950,8 @@ def text_field(
         text_field.setTarget_(target)
     if action:
         text_field.setAction_(action)
-
+    if kwargs:
+        configure(text_field, **kwargs)
     return text_field
 
 
