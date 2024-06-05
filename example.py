@@ -45,6 +45,7 @@ from appkitgui import (
     constrain_to_width_height,
     date_picker,
     hseparator,
+    hspacer,
     hstack,
     image_view,
     label,
@@ -148,13 +149,26 @@ class DemoWindow(NSObject):
 
             self.menus = self.create_menus()
 
+            self.hstack0 = hstack()
+            self.main_view.append(self.hstack0)
+            self.hstack0_0 = hstack()
+            self.hstack0_1 = hstack()
+            self.hstack0.extend([self.hstack0_0, self.hstack0_1])
             self.label_hello = label("Hello World")
-            self.main_view.append(self.label_hello)
-
+            self.hstack0_0.append(self.label_hello)
             self.link = link(
                 "AppKitGUI on GitHub", "https://github.com/RhetTbull/appkitgui"
             )
-            self.main_view.append(self.link)
+            self.hstack0_1.append(self.link)
+
+            # constraint the two side-by-side stacks so that they are the same width
+            constrain_stacks_side_by_side(
+                self.hstack0_0, self.hstack0_1, padding=PADDING
+            )
+            # constrain hstack0 to the width of the main view so that it resizes when the window does
+            constrain_to_parent_width(
+                self.hstack0, self.main_view, edge_inset=EDGE_INSET
+            )
 
             # add a horizontal NSStackView to hold widgets side by side
             # and add it to the main view
@@ -288,7 +302,7 @@ class DemoWindow(NSObject):
             self.main_view.append(self.hsep2)
 
             self.label_array = NSMutableArray.alloc().init()
-            for x in range(10):
+            for x in range(20):
                 self.label_array.append(label(f"Label {x}"))
             self.hstack4 = hstack(hscroll=True, views=self.label_array)
             constrain_to_height(self.hstack4, 50)

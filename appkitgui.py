@@ -372,7 +372,7 @@ def configure(obj: NSObject, **kwargs):
 
 def hstack(
     align: int = AppKit.NSLayoutAttributeTop,
-    distribute: int | None = AppKit.NSStackViewDistributionFill,
+    distribute: int | None = None,
     vscroll: bool = False,
     hscroll: bool = False,
     views: (
@@ -410,6 +410,7 @@ def hstack(
         else:
             edge_insets = edge_inset
         hstack.setEdgeInsets_(edge_insets)
+
     if vscroll or hscroll:
         scroll_view = ScrolledStackView.alloc().initWithStack_(hstack, vscroll, hscroll)
         return scroll_view
@@ -444,10 +445,10 @@ def vstack(
     vstack.setAlignment_(align)
     vstack.setTranslatesAutoresizingMaskIntoConstraints_(False)
     # TODO: set priority as arg? or let user set it later?
-    vstack.setHuggingPriority_forOrientation_(
-        AppKit.NSLayoutPriorityDefaultHigh,
-        AppKit.NSLayoutConstraintOrientationVertical,
-    )
+    # vstack.setHuggingPriority_forOrientation_(
+    #     AppKit.NSLayoutPriorityDefaultHigh,
+    #     AppKit.NSLayoutConstraintOrientationVertical,
+    # )
     if edge_inset:
         if isinstance(edge_inset, (int, float)):
             # use even insets
@@ -480,6 +481,7 @@ def label(value: str, **kwargs) -> NSTextField:
     label.setEditable_(False)
     label.setBordered_(False)
     label.setBackgroundColor_(AppKit.NSColor.clearColor())
+    label.setTranslatesAutoresizingMaskIntoConstraints_(False)
     if kwargs:
         configure(label, **kwargs)
     return label
@@ -487,7 +489,9 @@ def label(value: str, **kwargs) -> NSTextField:
 
 def link(text: str, url: str) -> NSTextField:
     """Create a clickable link label"""
-    return LinkLabel.alloc().initWithText_URL_(text, url)
+    link = LinkLabel.alloc().initWithText_URL_(text, url)
+    link.setTranslatesAutoresizingMaskIntoConstraints_(False)
+    return link
 
 
 def button(
@@ -1121,6 +1125,137 @@ def set_compression_resistance(
     view.setContentCompressionResistancePriority_forOrientation_(priority, orientation)
 
 
+# def constrain_stacks_side_by_side(
+#     *stacks: NSStackView,
+#     weights: list[float] | None = None,
+#     parent: NSStackView | None = None,
+#     padding: int = 0,
+#     edge_inset: float = 0,
+# ):
+#     """Constrain a list of NSStackViews to be side by side optionally using weighted widths
+
+#     Args:
+#         *stacks: NSStackViews to constrain
+#         weights: weights to use for each stack; if None, all stacks are equal width
+#         parent: NSStackView to constrain the stacks to; if None, uses stacks[0].superview()
+#         padding: padding between stacks
+#         edge_inset: padding between stacks and parent
+
+
+#     Note:
+#         If weights are provided, the stacks will be constrained to be side by side with
+#         widths proportional to the weights. For example, if 2 stacks are provided with
+#         weights = [1, 2], the first stack will be half the width of the second stack.
+#     """
+
+#     if len(stacks) < 2:
+#         raise ValueError("Must provide at least two stacks")
+
+#     parent = parent or stacks[0].superview()
+
+#     if weights is not None:
+#         min_weight, min_index = min_with_index(weights)
+#     else:
+#         min_weight, min_index = 1.0, 0
+
+#     for i, stack in enumerate(stacks):
+#         if i == 0:
+#             stack.leadingAnchor().constraintEqualToAnchor_constant_(
+#                 parent.leadingAnchor(), edge_inset
+#             ).setActive_(True)
+#         else:
+#             stack.leadingAnchor().constraintEqualToAnchor_constant_(
+#                 stacks[i - 1].trailingAnchor(), padding
+#             ).setActive_(True)
+#         if i == len(stacks) - 1:
+#             stack.trailingAnchor().constraintEqualToAnchor_constant_(
+#                 parent.trailingAnchor(), -edge_inset
+#             ).setActive_(True)
+#         stack.topAnchor().constraintEqualToAnchor_constant_(
+#             parent.topAnchor(), edge_inset
+#         ).setActive_(True)
+#         stack.bottomAnchor().constraintEqualToAnchor_constant_(
+#             parent.bottomAnchor(), -edge_inset
+#         ).setActive_(True)
+
+#         if weights is not None:
+#             weight = weights[i] / min_weight
+#         else:
+#             weight = 1.0
+
+#         AppKit.NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
+#             stack,
+#             AppKit.NSLayoutAttributeWidth,
+#             AppKit.NSLayoutRelationEqual,
+#             stacks[min_index],
+#             AppKit.NSLayoutAttributeWidth,
+#             weight,
+#             0.0,
+#         ).setActive_(
+#             True
+#         )
+
+
+# def constrain_stacks_side_by_side(
+#     *stacks: NSStackView,
+#     weights: list[float] | None = None,
+#     parent: NSStackView | None = None,
+#     padding: int = 0,
+#     edge_inset: float = 0,
+# ):
+#     """Constrain a list of NSStackViews to be side by side optionally using weighted widths
+
+#     Args:
+#         *stacks: NSStackViews to constrain
+#         weights: weights to use for each stack; if None, all stacks are equal width
+#         parent: NSStackView to constrain the stacks to; if None, uses stacks[0].superview()
+#         padding: padding between stacks
+#         edge_inset: padding between stacks and parent
+
+#     Note:
+#         If weights are provided, the stacks will be constrained to be side by side with
+#         widths proportional to the weights. For example, if 2 stacks are provided with
+#         weights = [1, 2], the first stack will be half the width of the second stack.
+#     """
+#     if weights is None:
+#         weights = [1] * len(stacks)  # Default to equal weights
+#     total_weight = sum(weights)
+
+#     if parent is None:
+#         parent = stacks[0].superview()
+
+#     print(f"{weights=}")
+#     previous_stack = None
+#     for i, stack in enumerate(stacks):
+#         print(f"{previous_stack=} {stack=}")
+#         stack.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
+#         if i == 0:
+#             stack.leadingAnchor().constraintEqualToAnchor_constant_(
+#                 parent.leadingAnchor(), edge_inset
+#             ).setActive_(True)
+#         else:
+#             stack.leadingAnchor().constraintEqualToAnchor_constant_(
+#                 previous_stack.trailingAnchor(), padding
+#             ).setActive_(True)
+
+#         if i == len(stacks) - 1:
+#             stack.trailingAnchor().constraintEqualToAnchor_constant_(
+#                 parent.trailingAnchor(), -edge_inset
+#             ).setActive_(True)
+
+#         width_multiplier = weights[i] / total_weight
+#         print(f"{width_multiplier=}")
+#         print(f"constant = {-((len(stacks) - 1) * padding + 2 * edge_inset) * width_multiplier}")
+#         width_constraint = stack.widthAnchor().constraintEqualToAnchor_constant_(
+#             parent.widthAnchor(),
+#             -((len(stacks) - 1) * padding + 2 * edge_inset) * width_multiplier,
+#         )
+#         width_constraint.setActive_(True)
+
+#         previous_stack = stack
+
+
 def constrain_stacks_side_by_side(
     *stacks: NSStackView,
     weights: list[float] | None = None,
@@ -1132,64 +1267,47 @@ def constrain_stacks_side_by_side(
 
     Args:
         *stacks: NSStackViews to constrain
-        weights: optional weights to use for each stack
+        weights: weights to use for each stack; if None, all stacks are equal width
         parent: NSStackView to constrain the stacks to; if None, uses stacks[0].superview()
         padding: padding between stacks
         edge_inset: padding between stacks and parent
-
 
     Note:
         If weights are provided, the stacks will be constrained to be side by side with
         widths proportional to the weights. For example, if 2 stacks are provided with
         weights = [1, 2], the first stack will be half the width of the second stack.
     """
+    if weights is None:
+        weights = [1] * len(stacks)  # Default to equal weights
+    total_weight = sum(weights)
 
-    if len(stacks) < 2:
-        raise ValueError("Must provide at least two stacks")
+    if parent is None:
+        parent = stacks[0].superview()
 
-    parent = parent or stacks[0].superview()
-
-    if weights is not None:
-        min_weight, min_index = min_with_index(weights)
-    else:
-        min_weight, min_index = 1.0, 0
-
+    previous_stack = None
     for i, stack in enumerate(stacks):
+        stack.setTranslatesAutoresizingMaskIntoConstraints_(False)
+
         if i == 0:
             stack.leadingAnchor().constraintEqualToAnchor_constant_(
                 parent.leadingAnchor(), edge_inset
             ).setActive_(True)
         else:
             stack.leadingAnchor().constraintEqualToAnchor_constant_(
-                stacks[i - 1].trailingAnchor(), padding
+                previous_stack.trailingAnchor(), padding
             ).setActive_(True)
+
         if i == len(stacks) - 1:
             stack.trailingAnchor().constraintEqualToAnchor_constant_(
                 parent.trailingAnchor(), -edge_inset
             ).setActive_(True)
-        stack.topAnchor().constraintEqualToAnchor_constant_(
-            parent.topAnchor(), edge_inset
+
+        width_multiplier = weights[i] / total_weight
+        stack.widthAnchor().constraintEqualToAnchor_multiplier_(
+            parent.widthAnchor(), width_multiplier
         ).setActive_(True)
-        stack.bottomAnchor().constraintEqualToAnchor_constant_(
-            parent.bottomAnchor(), -edge_inset
-        ).setActive_(True)
 
-        if not weights:
-            continue
-
-        weight = weights[i] / min_weight
-
-        AppKit.NSLayoutConstraint.constraintWithItem_attribute_relatedBy_toItem_attribute_multiplier_constant_(
-            stack,
-            AppKit.NSLayoutAttributeWidth,
-            AppKit.NSLayoutRelationEqual,
-            stacks[min_index],
-            AppKit.NSLayoutAttributeWidth,
-            weight,
-            0.0,
-        ).setActive_(
-            True
-        )
+        previous_stack = stack
 
 
 def constrain_stacks_top_to_bottom(
@@ -1231,6 +1349,7 @@ def constrain_stacks_top_to_bottom(
                 parent.topAnchor(), edge_inset
             ).setActive_(True)
         else:
+            weight = 1.0
             stack.topAnchor().constraintEqualToAnchor_constant_(
                 stacks[i - 1].bottomAnchor(), padding
             ).setActive_(True)
