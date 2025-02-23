@@ -24,6 +24,7 @@ from AppKit import (
     NSImageView,
     NSPopUpButton,
     NSScrollView,
+    NSSearchField,
     NSSlider,
     NSStackView,
     NSStepper,
@@ -957,6 +958,33 @@ def text_field(
     if kwargs:
         configure(text_field, **kwargs)
     return text_field
+
+
+def search_field(
+    size: tuple[float, float] = (200, 25),
+    target: NSObject | None = None,
+    action: Callable | str | None = None,
+    **kwargs,
+) -> NSSearchField:
+    """Create a search field.
+
+    Args:
+        size: width, height of the text field
+        target: target to send action to
+        action: action to send when the date is changed
+        **kwargs: additional keyword/value attributes to configure
+
+    Returns NSSearchField
+    """
+    search_field = NSSearchField.alloc().initWithFrame_(NSMakeRect(0, 0, *size))
+    if target:
+        search_field.setTarget_(target)
+    if action:
+        search_field.setAction_(action)
+    if kwargs:
+        configure(search_field, **kwargs)
+
+    return search_field
 
 
 ################################################################################

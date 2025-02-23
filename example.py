@@ -59,6 +59,7 @@ from appkitgui import (
     nsdate_to_datetime,
     popup_button,
     radio_button,
+    search_field,
     slider,
     stepper,
     text_field,
@@ -326,6 +327,9 @@ class DemoWindow(NSObject):
             )
             self.hstack5.append(self.time_picker)
 
+            self.search_field = search_field(target=self, action="searchFieldAction:")
+            self.hstack5.append(self.search_field)
+
             self.hsep4 = hseparator()
             self.main_view.append(self.hsep4)
             self.hstack6 = hstack(align=AppKit.NSLayoutAttributeTop)
@@ -401,6 +405,10 @@ class DemoWindow(NSObject):
         # must be done manually
         time = nsdate_to_datetime(sender.dateValue()).time()
         print(f"Time: {time.strftime('%H:%M:%S')}")
+
+    def searchFieldAction_(self, sender):
+        """Handle serach field action"""
+        print("Search field:", sender.stringValue())
 
     def textFieldAction_(self, sender):
         """Handle text field change"""
