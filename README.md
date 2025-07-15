@@ -203,6 +203,10 @@ AppKitGUI is not intended to be a complete GUI framework but it does vastly simp
 
 With PyObjC, properties on the Objective-C objects are usually accessed using getter and setter functions. The getter is the name of the property and the setter is `setProperty_` where `Property` is the name of the property with the first letter capitalized. For example, the `title` property of `NSButton` is accessed using the `title()` getter and `setTitle_()` setter.
 
+### Debugging
+
+Debugging can be a challenge because pyobjc will often swallow exceptions that occur in the Objective-C code being called. Adding `objc.setVerbose(1)` to your code will cause pyobjc to print out the Objective-C stack trace when an exception occurs.
+
 ## Implementation Notes
 
 I'm certain there are better ways to do this. The AppKit framework provides many different ways to create and use native controls. I've experimented and found something that worked but it may not be optimal. I welcome any feedback or suggestions for improvement.
